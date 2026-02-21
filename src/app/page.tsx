@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Ticket as TicketIcon, Clock, Trophy, Phone, PartyPopper, ChevronLeft, ChevronRight } from "lucide-react";
+import { Ticket as TicketIcon, Clock, Trophy, PartyPopper, ChevronLeft, ChevronRight } from "lucide-react";
 import confetti from "canvas-confetti";
 import { mockStore, type Raffle, type Participant } from "@/lib/store";
 
