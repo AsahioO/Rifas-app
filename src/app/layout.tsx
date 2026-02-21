@@ -9,11 +9,20 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#000000",
 };
 
 export const metadata: Metadata = {
   title: "WhatsHome Rifas | Gana grandes premios",
   description: "Participa en nuestras exclusivas rifas y gana increíbles productos.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "WhatsHome Rifas",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({

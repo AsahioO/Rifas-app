@@ -37,3 +37,9 @@ next-env.d.ts
 
 # base de datos
 *.sql
+
+# PWA files
+**/public/sw.js
+**/public/workbox-*.js
+**/public/fallback-*.js
+**/public/swe-worker-*.js
