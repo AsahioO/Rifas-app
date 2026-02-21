@@ -40,6 +40,17 @@ class Store {
         return data as Raffle;
     }
 
+    async getHistoricalRaffles(): Promise<Raffle[]> {
+        const { data, error } = await supabase
+            .from('rifas')
+            .select('*')
+            .eq('estado', 'finalizada')
+            .order('created_at', { ascending: false });
+
+        if (error || !data) return [];
+        return data as Raffle[];
+    }
+
     async getParticipants(): Promise<Participant[]> {
         const activeRaffle = await this.getActiveRaffle();
         if (!activeRaffle) return [];
