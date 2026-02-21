@@ -75,7 +75,7 @@ export default function LandingPage() {
           href="/admin/login"
           className="text-sm font-semibold text-white/50 hover:text-white transition-colors"
         >
-          Admin
+          Iniciar Sesión
         </a>
       </header>
 
