@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Trophy, ArrowLeft, Loader2, PartyPopper } from "lucide-react";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 import { mockStore, type Raffle, type Participant } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
 
 export default function SorteoPage() {
     const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null);
@@ -23,7 +24,23 @@ export default function SorteoPage() {
     const [isResetting, setIsResetting] = useState(false);
     const [spunCard, setSpunCard] = useState<{ boleto: number, nombre: string } | null>(null);
 
+    // Realtime Broadcast channel
+    const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+    const broadcast = (evento: string, payload: Record<string, unknown>) => {
+        channelRef.current?.send({
+            type: 'broadcast',
+            event: 'sorteo',
+            payload: { evento, ...payload },
+        });
+    };
+
     useEffect(() => {
+        // Crear canal Broadcast
+        const channel = supabase.channel('sorteo-live');
+        channel.subscribe();
+        channelRef.current = channel;
+
         const loadData = async () => {
             const raffle = await mockStore.getActiveRaffle();
             setActiveRaffle(raffle);
@@ -40,6 +57,10 @@ export default function SorteoPage() {
             setLoading(false);
         };
         loadData();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fireConfetti = () => {
@@ -99,8 +120,8 @@ export default function SorteoPage() {
         // Calculate dynamic rotation
         const sliceAngle = 360 / N;
         const targetMidAngle = targetIndex * sliceAngle + (sliceAngle / 2);
-        const pointerAngle = 270; // Set to Top (270 degrees)
-        const extraSpins = 360 * 5; // Spin smoothly for 5 full circles
+        const pointerAngle = 270;
+        const extraSpins = 360 * 5;
 
         const currMod = ((rotation % 360) + 360) % 360;
 
@@ -113,6 +134,14 @@ export default function SorteoPage() {
         const newRotation = rotation + extraSpins + diff;
         setRotation(newRotation);
 
+        // 📡 BROADCAST: Enviar evento de giro a la Landing
+        broadcast('girando', {
+            rotation: newRotation,
+            slices: sliceDetails.map(s => ({ boleto: s.boleto, nombre: s.nombre })),
+            intento: currentIntento,
+            totalIntentos: activeRaffle.giro_ganador,
+        });
+
         setTimeout(() => {
             const isWinningAttempt = currentIntento >= activeRaffle.giro_ganador || N === 1;
 
@@ -122,9 +151,22 @@ export default function SorteoPage() {
                 fireConfetti();
                 mockStore.finalizeRaffle(selectedCard.boleto, selectedCard.nombre);
                 setIsDrawing(false);
+
+                // 📡 BROADCAST: Ganador
+                broadcast('ganador', {
+                    boleto: selectedCard.boleto,
+                    nombre: selectedCard.nombre,
+                });
             } else {
                 setSpunCard(selectedCard);
-                // Pause slightly to show the eliminated card explicitly, then reset
+
+                // 📡 BROADCAST: Eliminado
+                broadcast('eliminado', {
+                    boleto: selectedCard.boleto,
+                    nombre: selectedCard.nombre,
+                    intento: currentIntento,
+                });
+
                 setTimeout(() => {
                     setEliminatedTickets(prev => [...prev, selectedCard.boleto]);
                     setCurrentIntento(prev => prev + 1);
@@ -135,10 +177,13 @@ export default function SorteoPage() {
                         setIsResetting(false);
                         setIsDrawing(false);
                         setSpunCard(null);
+
+                        // 📡 BROADCAST: Reset de ruleta para siguiente giro
+                        broadcast('reset', {});
                     }, 50);
-                }, 2000); // 2 seconds showing "Eliminated" overlay
+                }, 2000);
             }
-        }, 4000); // the wheel spins for 4 seconds
+        }, 4000);
     };
 
     const getCoordinatesForPercent = (percent: number) => {
