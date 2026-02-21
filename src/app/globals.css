@@ -2,25 +2,96 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Color Background VINO MUY OSCURO */
+    --background: 340 30% 6%;
+    --foreground: 0 0% 98%;
+
+    --card: 340 30% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 340 30% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Vino Clásico como Primary */
+    --primary: 340 45% 35%;
+    /* #813146 aprox */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 340 30% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 340 30% 12%;
+    --muted-foreground: 340 10% 65%;
+
+    /* Dorado Elegante como Acento */
+    --accent: 43 74% 49%;
+    /* Golden Accent #D4AF37 */
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 340 30% 16%;
+    --input: 340 30% 16%;
+    --ring: 340 45% 35%;
+    --radius: 1rem;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans), sans-serif;
+    background-image:
+      radial-gradient(circle at 15% 50%, rgba(129, 49, 70, 0.15), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(212, 175, 55, 0.08), transparent 25%);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background-color: hsla(340, 45%, 35%, 0.5);
+    color: white;
+  }
 }
 
 @layer utilities {
+  .text-glow {
+    text-shadow: 0 0 20px rgba(129, 49, 70, 0.6);
+  }
+
+  .accent-glow {
+    text-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
+  }
+
+  .glass-panel {
+    background-color: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  }
+
+  .gold-gradient {
+    background-image: linear-gradient(to right, #fde047, #d4af37, #996515);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Se mantiene el normbre para compatibilidad si ya está regado, pero el color es dorado/vino */
+  .emerald-gradient {
+    background-image: linear-gradient(to right, #fbbf24, #d4af37);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   .text-balance {
     text-wrap: balance;
   }
