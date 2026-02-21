@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trophy, ArrowRight, Loader2 } from "lucide-react";
-import { mockAuth } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -18,12 +18,13 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const { data, error } = await mockAuth.signIn(email, password);
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
             if (error) {
-                setError(error.message);
-            } else if (data) {
-                // Set document cookie for middleware
-                document.cookie = "mock_logged_in=true; path=/; max-age=86400"; // 1 day
+                setError("Credenciales inválidas. Verifica tu correo y contraseña.");
+            } else {
                 router.push("/admin");
                 router.refresh();
             }

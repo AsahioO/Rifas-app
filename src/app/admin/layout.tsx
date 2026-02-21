@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Ticket, Users, History, Settings, LogOut, Menu, X } from "lucide-react";
-import { mockAuth } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -19,8 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     ];
 
     const handleLogout = async () => {
-        await mockAuth.signOut();
-        document.cookie = "mock_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+        await supabase.auth.signOut();
         router.push("/admin/login");
         router.refresh();
     };
