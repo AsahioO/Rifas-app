@@ -45,8 +45,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <nav className={`
         ${isMobileMenuOpen ? 'flex' : 'hidden'} 
         md:flex flex-col w-full md:w-64 glass-panel border-r border-white/5 
-        fixed md:sticky top-[72px] md:top-0 h-[calc(100vh-72px)] md:h-screen z-40
-        transition-all duration-300
+        fixed md:sticky top-[72px] md:top-0 h-[calc(100dvh-72px)] md:h-dvh z-40
+        transition-all duration-300 pb-[env(safe-area-inset-bottom)]
       `}>
                 <div className="hidden md:flex p-6 items-center gap-2 border-b border-white/5">
                     <div className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
@@ -87,7 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </nav>
 
             {/* MAIN CONTENT AREA */}
-            <main className="flex-1 w-full p-4 md:p-8 overflow-y-auto h-[calc(100vh-72px)] md:h-screen pb-24 md:pb-8">
+            <main className="flex-1 w-full p-4 md:p-8 overflow-y-auto h-[calc(100dvh-72px)] md:h-dvh pb-24 md:pb-8">
                 <div className="max-w-6xl mx-auto">
                     {children}
                 </div>
