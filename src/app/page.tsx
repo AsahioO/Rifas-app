@@ -278,14 +278,10 @@ export default function LandingPage() {
 
                           {/* Right Side: Action/Status */}
                           <div className="relative z-10 shrink-0 ml-2">
-                            {isTaken ? (
+                            {isTaken && (
                               <div className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-zinc-600 px-3 py-1.5 rounded-full border border-zinc-800/50 bg-black/40">
                                 No disponible
                               </div>
-                            ) : (
-                              <a href="https://wa.me/1234567890" target="_blank" rel="noreferrer" className="text-xs sm:text-sm uppercase tracking-wide font-bold bg-white/5 text-primary border border-primary/30 px-4 py-2 rounded-full hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_15px_rgba(129,49,70,0.5)] transition-all">
-                                Reservar
-                              </a>
                             )}
                           </div>
                         </div>
@@ -295,17 +291,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="mt-16 text-center">
-                <a href="https://wa.me/1234567890" target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 bg-gradient-to-r from-zinc-800 to-zinc-900 border border-zinc-700 hover:border-green-500/50 px-8 py-5 rounded-full transition-all group hover:scale-105 hover:shadow-[0_0_30px_rgba(34,197,94,0.15)]">
-                  <div className="bg-green-500/10 p-2 rounded-full group-hover:bg-green-500/20 transition-colors">
-                    <Phone className="w-6 h-6 text-green-500" />
-                  </div>
-                  <div className="text-left">
-                    <div className="font-bold text-lg leading-none">Reservar Boletos</div>
-                    <div className="text-sm text-muted-foreground">Envíanos un mensaje y apártalos</div>
-                  </div>
-                </a>
-              </div>
+              {/* Se eliminó el botón flotante de WhatsApp a petición del cliente */}
             </section>
           </>
         )}
