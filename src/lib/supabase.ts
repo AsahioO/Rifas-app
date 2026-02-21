@@ -10,22 +10,22 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // Exportaremos funciones que simulan llamadas a la BD mientras tanto
 
 export const mockAuth = {
-  getUser: async () => {
-    if (typeof window !== 'undefined') {
-      const isLogged = localStorage.getItem('mock_logged_in');
-      if (isLogged) return { data: { user: { id: 'mock-admin', email: 'admin@rifas.com' } }, error: null };
+    getUser: async () => {
+        if (typeof window !== 'undefined') {
+            const isLogged = localStorage.getItem('mock_logged_in');
+            if (isLogged) return { data: { user: { id: 'mock-admin', email: 'admin@rifas.com' } }, error: null };
+        }
+        return { data: { user: null }, error: null };
+    },
+    signIn: async (email: string, password: string) => {
+        if (email === 'admin@rifas.com' && password === 'admin123') {
+            if (typeof window !== 'undefined') localStorage.setItem('mock_logged_in', 'true');
+            return { data: { user: { id: 'mock-admin' } }, error: null };
+        }
+        return { data: null, error: { message: 'Credenciales inválidas. Verifica tu correo y contraseña.' } };
+    },
+    signOut: async () => {
+        if (typeof window !== 'undefined') localStorage.removeItem('mock_logged_in');
+        return { error: null };
     }
-    return { data: { user: null }, error: null };
-  },
-  signIn: async (email: string, password: string) => {
-    if (email === 'admin@rifas.com' && password === 'admin123') {
-      if (typeof window !== 'undefined') localStorage.setItem('mock_logged_in', 'true');
-      return { data: { user: { id: 'mock-admin' } }, error: null };
-    }
-    return { data: null, error: { message: 'Credenciales inválidas (usa admin@rifas.com / admin123)' } };
-  },
-  signOut: async () => {
-    if (typeof window !== 'undefined') localStorage.removeItem('mock_logged_in');
-    return { error: null };
-  }
 };
