@@ -7,6 +7,7 @@ import { mockStore, type Raffle, type Participant } from "@/lib/store";
 
 export default function AdminDashboardPage() {
     const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null);
+    const [lastFinished, setLastFinished] = useState<Raffle | null>(null);
     const [participants, setParticipants] = useState<Participant[]>([]);
     const [takenTickets, setTakenTickets] = useState<number[]>([]);
     const [loading, setLoading] = useState(true);
@@ -19,6 +20,10 @@ export default function AdminDashboardPage() {
         if (raffle) {
             setParticipants(await mockStore.getParticipants());
             setTakenTickets(await mockStore.getTakenTickets());
+        } else {
+            // Si no hay activa, revisar si hay una recién finalizada para mostrar panel de archivo
+            const finished = await mockStore.getLastFinishedRaffle();
+            setLastFinished(finished);
         }
         setLoading(false);
     };
@@ -55,7 +60,7 @@ export default function AdminDashboardPage() {
                     <h1 className="text-3xl font-syne font-bold">Resumen de Rifas</h1>
                     <p className="text-muted-foreground">Bienvenida al panel de administración.</p>
                 </div>
-                {!activeRaffle && (
+                {!activeRaffle && !lastFinished && (
                     <Link href="/admin/rifa/nueva" className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]">
                         <Plus className="w-5 h-5" />
                         Crear Nueva Rifa
@@ -63,7 +68,29 @@ export default function AdminDashboardPage() {
                 )}
             </div>
 
-            {!activeRaffle ? (
+            {/* Caso: Hay una rifa recién finalizada pendiente de archivar */}
+            {!activeRaffle && lastFinished ? (
+                <div className="glass-panel rounded-3xl p-10 border-yellow-500/20 flex flex-col justify-center items-center text-center space-y-4 relative overflow-hidden group bg-yellow-500/5">
+                    <div className="w-20 h-20 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500 ring-1 ring-yellow-500/30 z-10 mb-2">
+                        <Trophy className="w-10 h-10" />
+                    </div>
+                    <h3 className="font-syne font-bold text-3xl text-yellow-500">¡Sorteo Concluido!</h3>
+                    <p className="text-muted-foreground pb-4">
+                        {lastFinished.ganador_nombre === 'Cancelada' ? (
+                            <>La rifa <strong className="text-white">{lastFinished.nombre}</strong> fue cancelada.</>
+                        ) : (
+                            <>Ganador: <strong className="text-white text-lg">{lastFinished.ganador_nombre}</strong> con el boleto <strong className="text-yellow-500 text-lg">#{lastFinished.ganador_boleto}</strong></>
+                        )}
+                    </p>
+                    <Link
+                        href="/admin/rifa/nueva"
+                        className="z-10 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 px-8 py-4 rounded-xl font-bold transition-all mt-4 border border-yellow-500/20 hover:scale-105"
+                    >
+                        Crear Nueva Rifa
+                    </Link>
+                </div>
+
+            ) : !activeRaffle ? (
                 <div className="glass-panel border-dashed border-2 px-6 py-16 rounded-3xl text-center space-y-4">
                     <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto text-muted-foreground mb-6">
                         <Ticket className="w-10 h-10" />
@@ -199,26 +226,7 @@ export default function AdminDashboardPage() {
                                     Ir al Panel de Sorteo
                                 </Link>
                             </div>
-                        ) : (
-                            <div className="glass-panel rounded-3xl p-6 border-yellow-500/20 flex flex-col justify-center items-center text-center space-y-4 relative overflow-hidden group bg-yellow-500/5 h-full">
-                                <div className="w-20 h-20 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500 ring-1 ring-yellow-500/30 z-10 mb-2">
-                                    <Trophy className="w-10 h-10" />
-                                </div>
-                                <h3 className="font-syne font-bold text-3xl text-yellow-500">¡Sorteo Concluido!</h3>
-                                <p className="text-muted-foreground pb-4">
-                                    Ganador: <strong className="text-white text-lg">{activeRaffle.ganador_nombre}</strong> con el boleto <strong className="text-yellow-500 text-lg">#{activeRaffle.ganador_boleto}</strong>
-                                </p>
-                                <button
-                                    onClick={() => mockStore.resetStore().then(() => window.location.reload())}
-                                    className="z-10 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 px-8 py-4 rounded-xl font-bold transition-all mt-4 border border-yellow-500/20 hover:scale-105"
-                                >
-                                    Archivar y Crear Nueva Rifa
-                                </button>
-                                <Link href="/admin/sorteo" className="text-xs text-yellow-500/50 hover:text-yellow-500 mt-2 z-10">
-                                    Revivir ruleta del ganador
-                                </Link>
-                            </div>
-                        )}
+                        ) : null}
                     </div>
                 </>
             )}

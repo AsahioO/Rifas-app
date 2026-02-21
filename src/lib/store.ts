@@ -32,6 +32,20 @@ class Store {
         const { data, error } = await supabase
             .from('rifas')
             .select('*')
+            .eq('estado', 'activa')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (error || !data) return null;
+        return data as Raffle;
+    }
+
+    async getLastFinishedRaffle(): Promise<Raffle | null> {
+        const { data, error } = await supabase
+            .from('rifas')
+            .select('*')
+            .eq('estado', 'finalizada')
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
