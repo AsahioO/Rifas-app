@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Image as ImageIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { mockStore } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
 
 export default function NuevaRifaPage() {
     const router = useRouter();
@@ -18,6 +19,17 @@ export default function NuevaRifaPage() {
         total_boletos: 100,
         giro_ganador: 5,
     });
+
+    const [file, setFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const selectedFile = e.target.files[0];
+            setFile(selectedFile);
+            setPreviewUrl(URL.createObjectURL(selectedFile));
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -34,12 +46,33 @@ export default function NuevaRifaPage() {
         setLoading(true);
         setError("");
 
-        // Simulate API delay
-        await new Promise(r => setTimeout(r, 800));
+        let imageUrl = "https://images.unsplash.com/photo-1603792907191-89e55f70099a?q=80&w=2670&auto=format&fit=crop";
+
+        if (file) {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+            const filePath = `premios/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('rifas-images')
+                .upload(filePath, file);
+
+            if (uploadError) {
+                setError("Error al subir imagen. ¿Creaste el Cubo (Bucket) 'rifas-images' en Supabase?: " + uploadError.message);
+                setLoading(false);
+                return;
+            }
+
+            const { data: publicUrlData } = supabase.storage
+                .from('rifas-images')
+                .getPublicUrl(filePath);
+
+            imageUrl = publicUrlData.publicUrl;
+        }
 
         const { error: storeError } = await mockStore.createRaffle({
             ...formData,
-            fotos: ["https://images.unsplash.com/photo-1603792907191-89e55f70099a?q=80&w=2670&auto=format&fit=crop"], // Placeholder image
+            fotos: [imageUrl],
         });
 
         setLoading(false);
@@ -95,11 +128,24 @@ export default function NuevaRifaPage() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/80">Imágenes (Simulado por ahora)</label>
-                        <div className="border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col justify-center items-center text-center bg-black/20 hover:bg-white/5 transition-colors cursor-pointer group">
-                            <ImageIcon className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors mb-2" />
-                            <p className="text-sm">Módulo de subida de imágenes estará conectado a Supabase en Fase 5.</p>
-                            <p className="text-xs text-muted-foreground">Se autogenerará una foto representativa.</p>
+                        <label className="text-sm font-medium text-white/80">Imagen Principal del Premio</label>
+                        <div className="relative border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col justify-center items-center text-center bg-black/20 hover:bg-white/5 transition-colors cursor-pointer overflow-hidden group">
+                            {previewUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={previewUrl} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                            ) : (
+                                <>
+                                    <ImageIcon className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors mb-2" />
+                                    <p className="text-sm">Haz clic aquí para subir una foto representativa genial de la rifa.</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Archivos JPG o PNG.</p>
+                                </>
+                            )}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            />
                         </div>
                     </div>
                 </div>
