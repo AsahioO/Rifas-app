@@ -8,7 +8,7 @@ export type Raffle = {
     precio_boleto: number;
     total_boletos: number;
     giro_ganador: number; // 3, 4 or 5
-    estado: 'activa' | 'finalizada';
+    estado: 'activa' | 'finalizada' | 'archivada';
     created_at: string;
     ganador_boleto?: number;
     ganador_nombre?: string;
@@ -58,7 +58,7 @@ class Store {
         const { data, error } = await supabase
             .from('rifas')
             .select('*')
-            .eq('estado', 'finalizada')
+            .in('estado', ['finalizada', 'archivada'])
             .order('created_at', { ascending: false });
 
         if (error || !data) return [];
@@ -166,8 +166,6 @@ class Store {
     }
 
     async resetStore() {
-        // Technically we just update the active raffle to 'finalizada' so it's not active anymore
-        // Or we can delete it depending on logic. Let's just finalize it without winner to hide it
         const activeRaffle = await this.getActiveRaffle();
         if (activeRaffle) {
             await supabase
@@ -175,6 +173,19 @@ class Store {
                 .update({ estado: 'finalizada', ganador_nombre: 'Cancelada' })
                 .eq('id', activeRaffle.id);
         }
+    }
+
+    async archiveWinner(): Promise<{ error: Error | null }> {
+        const lastFinished = await this.getLastFinishedRaffle();
+        if (!lastFinished) return { error: new Error('No hay rifa finalizada para archivar.') };
+
+        const { error } = await supabase
+            .from('rifas')
+            .update({ estado: 'archivada' })
+            .eq('id', lastFinished.id);
+
+        if (error) return { error: new Error(error.message) };
+        return { error: null };
     }
 }
 

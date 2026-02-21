@@ -82,12 +82,28 @@ export default function AdminDashboardPage() {
                             <>Ganador: <strong className="text-white text-lg">{lastFinished.ganador_nombre}</strong> con el boleto <strong className="text-yellow-500 text-lg">#{lastFinished.ganador_boleto}</strong></>
                         )}
                     </p>
-                    <Link
-                        href="/admin/rifa/nueva"
-                        className="z-10 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 px-8 py-4 rounded-xl font-bold transition-all mt-4 border border-yellow-500/20 hover:scale-105"
-                    >
-                        Crear Nueva Rifa
-                    </Link>
+                    <div className="flex flex-col sm:flex-row items-center gap-4 mt-4">
+                        <Link
+                            href="/admin/rifa/nueva"
+                            className="z-10 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 px-8 py-4 rounded-xl font-bold transition-all border border-yellow-500/20 hover:scale-105"
+                        >
+                            Crear Nueva Rifa
+                        </Link>
+                        {lastFinished.ganador_nombre !== 'Cancelada' && (
+                            <button
+                                onClick={async () => {
+                                    if (confirm('¿Ocultar al ganador de la página pública? La información se conservará en el historial.')) {
+                                        await mockStore.archiveWinner();
+                                        window.location.reload();
+                                    }
+                                }}
+                                className="z-10 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white px-6 py-4 rounded-xl font-medium transition-all border border-white/10 text-sm"
+                            >
+                                Ocultar Ganador de la Página
+                            </button>
+                        )}
+                    </div>
+                    <p className="text-xs text-white/30 mt-4 max-w-md">El ganador se muestra en la página pública hasta que lo ocultes o crees una nueva rifa.</p>
                 </div>
 
             ) : !activeRaffle ? (

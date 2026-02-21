@@ -11,6 +11,7 @@ export default function LandingPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [takenTickets, setTakenTickets] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastFinished, setLastFinished] = useState<Raffle | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const confettiFired = useRef(false);
 
@@ -59,6 +60,10 @@ export default function LandingPage() {
           fireConfetti();
           confettiFired.current = true;
         }
+      } else {
+        // Si no hay activa, buscar la última finalizada para mostrar ganador persistente
+        const finished = await mockStore.getLastFinishedRaffle();
+        setLastFinished(finished);
       }
       setLoading(false);
     };
@@ -142,14 +147,49 @@ export default function LandingPage() {
             <p className="text-muted-foreground animate-pulse">Cargando Rifa Activa...</p>
           </div>
         ) : !activeRaffle ? (
-          <div className="w-full flex-1 flex flex-col justify-center items-center py-32 px-6">
-            <div className="w-full max-w-lg glass-panel p-12 rounded-[2rem] text-center border-dashed border-2 flex flex-col items-center justify-center space-y-4">
-              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center text-muted-foreground">
-                <Trophy className="w-10 h-10" />
+          <div className="w-full flex-1 flex flex-col justify-center items-center py-16 px-6">
+            {lastFinished && lastFinished.ganador_nombre && lastFinished.ganador_nombre !== 'Cancelada' ? (
+              /* ===== PERSISTENT WINNER VIEW ===== */
+              <div className="w-full max-w-3xl space-y-8 text-center animate-in fade-in duration-700">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-yellow-500/10 blur-[120px] rounded-full pointer-events-none" />
+                  <div className="glass-panel p-10 sm:p-14 rounded-[2rem] border border-yellow-500/20 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-yellow-500 to-transparent" />
+
+                    <PartyPopper className="w-16 h-16 text-yellow-500 mx-auto mb-6 animate-bounce" />
+                    <h2 className="text-4xl sm:text-5xl font-syne font-bold text-yellow-500 drop-shadow-[0_0_20px_rgba(234,179,8,0.3)] mb-4">
+                      ¡Tenemos Ganador!
+                    </h2>
+                    <p className="text-muted-foreground mb-8 text-lg">La rifa <strong className="text-white">{lastFinished.nombre}</strong> ha concluido</p>
+
+                    <div className="glass-panel p-8 rounded-2xl border border-yellow-500/10 inline-block mx-auto">
+                      <p className="text-yellow-500 text-7xl sm:text-8xl font-bold font-syne mb-3">#{lastFinished.ganador_boleto}</p>
+                      <p className="text-white text-2xl sm:text-3xl font-bold">{lastFinished.ganador_nombre}</p>
+                      <p className="text-muted-foreground mt-2 text-sm uppercase tracking-widest">Boleto Ganador</p>
+                    </div>
+
+                    {lastFinished.fotos && lastFinished.fotos.length > 0 && (
+                      <div className="mt-10 max-w-sm mx-auto">
+                        <div className="aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                          <img src={lastFinished.fotos[0]} alt="Premio" className="w-full h-full object-cover" />
+                        </div>
+                        <p className="text-muted-foreground text-sm mt-3">{lastFinished.descripcion}</p>
+                      </div>
+                    )}
+
+                    <p className="text-white/30 text-xs mt-10 uppercase tracking-widest">¡Felicidades! Pronto habrá una nueva rifa...</p>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-3xl font-bold font-syne">No hay rifas activas</h2>
-              <p className="text-muted-foreground">La administración aún no ha publicado el próximo gran premio. Por favor vuelve más tarde para asegurar tu boleto.</p>
-            </div>
+            ) : (
+              <div className="w-full max-w-lg glass-panel p-12 rounded-[2rem] text-center border-dashed border-2 flex flex-col items-center justify-center space-y-4">
+                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center text-muted-foreground">
+                  <Trophy className="w-10 h-10" />
+                </div>
+                <h2 className="text-3xl font-bold font-syne">No hay rifas activas</h2>
+                <p className="text-muted-foreground">La administración aún no ha publicado el próximo gran premio. Por favor vuelve más tarde para asegurar tu boleto.</p>
+              </div>
+            )}
           </div>
         ) : (
           <>
