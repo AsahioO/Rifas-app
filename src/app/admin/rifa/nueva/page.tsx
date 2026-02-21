@@ -20,15 +20,22 @@ export default function NuevaRifaPage() {
         giro_ganador: 5,
     });
 
-    const [file, setFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [files, setFiles] = useState<File[]>([]);
+    const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            const selectedFile = e.target.files[0];
-            setFile(selectedFile);
-            setPreviewUrl(URL.createObjectURL(selectedFile));
+            const selectedFiles = Array.from(e.target.files);
+            setFiles(prev => [...prev, ...selectedFiles]);
+
+            const newUrls = selectedFiles.map(file => URL.createObjectURL(file));
+            setPreviewUrls(prev => [...prev, ...newUrls]);
         }
+    };
+
+    const removeFile = (index: number) => {
+        setFiles(prev => prev.filter((_, i) => i !== index));
+        setPreviewUrls(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -46,33 +53,37 @@ export default function NuevaRifaPage() {
         setLoading(true);
         setError("");
 
-        let imageUrl = "https://images.unsplash.com/photo-1603792907191-89e55f70099a?q=80&w=2670&auto=format&fit=crop";
+        let imageUrls: string[] = [];
 
-        if (file) {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
-            const filePath = `premios/${fileName}`;
+        if (files.length > 0) {
+            for (const file of files) {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+                const filePath = `premios/${fileName}`;
 
-            const { error: uploadError } = await supabase.storage
-                .from('rifas-images')
-                .upload(filePath, file);
+                const { error: uploadError } = await supabase.storage
+                    .from('rifas-images')
+                    .upload(filePath, file);
 
-            if (uploadError) {
-                setError("Error al subir imagen. ¿Creaste el Cubo (Bucket) 'rifas-images' en Supabase?: " + uploadError.message);
-                setLoading(false);
-                return;
+                if (uploadError) {
+                    setError("Error al subir imagen. ¿Creaste el Cubo (Bucket) 'rifas-images' en Supabase?: " + uploadError.message);
+                    setLoading(false);
+                    return;
+                }
+
+                const { data: publicUrlData } = supabase.storage
+                    .from('rifas-images')
+                    .getPublicUrl(filePath);
+
+                imageUrls.push(publicUrlData.publicUrl);
             }
-
-            const { data: publicUrlData } = supabase.storage
-                .from('rifas-images')
-                .getPublicUrl(filePath);
-
-            imageUrl = publicUrlData.publicUrl;
+        } else {
+            imageUrls = ["https://images.unsplash.com/photo-1603792907191-89e55f70099a?q=80&w=2670&auto=format&fit=crop"];
         }
 
         const { error: storeError } = await mockStore.createRaffle({
             ...formData,
-            fotos: [imageUrl],
+            fotos: imageUrls,
         });
 
         setLoading(false);
@@ -128,24 +139,50 @@ export default function NuevaRifaPage() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/80">Imagen Principal del Premio</label>
-                        <div className="relative border-2 border-dashed border-white/10 rounded-xl p-8 flex flex-col justify-center items-center text-center bg-black/20 hover:bg-white/5 transition-colors cursor-pointer overflow-hidden group">
-                            {previewUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={previewUrl} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                        <label className="text-sm font-medium text-white/80">Imágenes Reales del Premio (Múltiples permitidas)</label>
+                        <div className="relative border-2 border-dashed border-white/10 rounded-xl p-4 sm:p-6 flex flex-col justify-center items-center text-center bg-black/20 hover:bg-white/5 transition-colors group min-h-[200px]">
+                            {previewUrls.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full p-2">
+                                    {previewUrls.map((url, idx) => (
+                                        <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group/item border border-white/10 shadow-lg">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={url} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeFile(idx); }}
+                                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center justify-center w-7 h-7 hover:scale-110 shadow-lg"
+                                                title="Eliminar Foto"
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <div className="relative aspect-square rounded-lg border-2 border-dashed border-white/20 flex flex-col items-center justify-center text-muted-foreground hover:text-white hover:border-white/50 transition-colors cursor-pointer bg-white/5">
+                                        <ImageIcon className="w-8 h-8 mb-1" />
+                                        <span className="text-xs">Añadir más</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={handleFileChange}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
                             ) : (
                                 <>
                                     <ImageIcon className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors mb-2" />
-                                    <p className="text-sm">Haz clic aquí para subir una foto representativa genial de la rifa.</p>
-                                    <p className="text-xs text-muted-foreground mt-1">Archivos JPG o PNG.</p>
+                                    <p className="text-sm">Haz clic aquí para subir fotos geniales de la rifa.</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Soporta múltiples archivos JPG o PNG.</p>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleFileChange}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                    />
                                 </>
                             )}
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleFileChange}
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                            />
                         </div>
                     </div>
                 </div>

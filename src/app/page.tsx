@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Ticket as TicketIcon, Clock, Trophy, Phone, PartyPopper } from "lucide-react";
+import { Ticket as TicketIcon, Clock, Trophy, Phone, PartyPopper, ChevronLeft, ChevronRight } from "lucide-react";
 import confetti from "canvas-confetti";
 import { mockStore, type Raffle, type Participant } from "@/lib/store";
 
@@ -10,7 +10,20 @@ export default function LandingPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [takenTickets, setTakenTickets] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const confettiFired = useRef(false);
+
+  // Auto-slide carousel
+  useEffect(() => {
+    if (!activeRaffle || !activeRaffle.fotos || activeRaffle.fotos.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => (prev + 1) % activeRaffle.fotos.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [activeRaffle]);
+
+  const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % activeRaffle!.fotos.length);
+  const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + activeRaffle!.fotos.length) % activeRaffle!.fotos.length);
 
   const fireConfetti = () => {
     const duration = 3 * 1000;
@@ -140,17 +153,51 @@ export default function LandingPage() {
                 )}
               </div>
 
-              <div className="flex-1 w-full max-w-md relative group mt-8 md:mt-0">
+              <div className="flex-1 w-full max-w-[320px] sm:max-w-md relative group mt-8 md:mt-0 mx-auto">
                 <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full group-hover:bg-primary/30 transition-all duration-700" />
-                <div className="relative aspect-square rounded-3xl overflow-hidden glass-panel border border-white/10 p-3 sm:p-5">
-                  <div className="w-full h-full bg-zinc-800/80 rounded-2xl flex items-center justify-center overflow-hidden relative shadow-inner">
+                <div className="relative aspect-[4/5] sm:aspect-square rounded-3xl overflow-hidden glass-panel border border-white/10 p-2 sm:p-5">
+                  <div className="w-full h-full bg-zinc-900 rounded-2xl flex items-center justify-center overflow-hidden relative shadow-inner">
                     {activeRaffle.fotos && activeRaffle.fotos.length > 0 ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={activeRaffle.fotos[0]}
-                        alt={activeRaffle.nombre}
-                        className="object-cover w-full h-full hover:scale-105 transition-transform duration-700"
-                      />
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={activeRaffle.fotos[currentImageIndex]}
+                          alt={`${activeRaffle.nombre} - vista ${currentImageIndex + 1}`}
+                          className="object-cover w-full h-full transition-all duration-500 ease-in-out hover:scale-105"
+                        />
+
+                        {/* Controls (only if multiple images) */}
+                        {activeRaffle.fotos.length > 1 && (
+                          <>
+                            <button
+                              onClick={prevImage}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white/70 hover:text-white hover:bg-black/80 backdrop-blur transition-all opacity-0 group-hover:opacity-100 shadow-lg"
+                              aria-label="Anterior imagen"
+                            >
+                              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+                            </button>
+                            <button
+                              onClick={nextImage}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white/70 hover:text-white hover:bg-black/80 backdrop-blur transition-all opacity-0 group-hover:opacity-100 shadow-lg"
+                              aria-label="Siguiente imagen"
+                            >
+                              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                            </button>
+
+                            {/* Dots */}
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10 bg-black/20 px-3 py-2 rounded-full backdrop-blur-sm">
+                              {activeRaffle.fotos.map((_, dotIdx) => (
+                                <button
+                                  key={dotIdx}
+                                  onClick={() => setCurrentImageIndex(dotIdx)}
+                                  className={`h-2 rounded-full transition-all duration-300 ${dotIdx === currentImageIndex ? 'bg-primary w-6' : 'bg-white/40 hover:bg-white/80 w-2'}`}
+                                  aria-label={`Ir a imagen ${dotIdx + 1}`}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </>
                     ) : (
                       <p className="text-muted-foreground text-sm font-medium">Sin imagen</p>
                     )}
