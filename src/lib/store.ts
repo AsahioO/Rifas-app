@@ -4,11 +4,13 @@ export type Raffle = {
     id: string;
     nombre: string;
     descripcion: string;
+    regalo_incluido?: string;
     fotos: string[];
+    fotos_regalo?: string[];
     precio_boleto: number;
     total_boletos: number;
     giro_ganador: number; // 3, 4 or 5
-    estado: 'activa' | 'finalizada' | 'archivada';
+    estado: 'activa' | 'finalizada' | 'archivada' | 'borrador';
     created_at: string;
     ganador_boleto?: number;
     ganador_nombre?: string;
@@ -45,12 +47,13 @@ class Store {
         const { data, error } = await supabase
             .from('rifas')
             .select('*')
-            .eq('estado', 'finalizada')
+            .in('estado', ['finalizada', 'archivada'])
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
 
         if (error || !data) return null;
+        if (data.estado === 'archivada') return null;
         return data as Raffle;
     }
 
@@ -59,6 +62,17 @@ class Store {
             .from('rifas')
             .select('*')
             .in('estado', ['finalizada', 'archivada'])
+            .order('created_at', { ascending: false });
+
+        if (error || !data) return [];
+        return data as Raffle[];
+    }
+
+    async getDraftRaffles(): Promise<Raffle[]> {
+        const { data, error } = await supabase
+            .from('rifas')
+            .select('*')
+            .eq('estado', 'borrador')
             .order('created_at', { ascending: false });
 
         if (error || !data) return [];
@@ -142,15 +156,32 @@ class Store {
         };
     }
 
-    async createRaffle(data: Omit<Raffle, 'id' | 'estado' | 'created_at'>): Promise<{ data: Raffle | null, error: Error | null }> {
-        const currentActive = await this.getActiveRaffle();
-        if (currentActive && currentActive.estado === 'activa') {
-            return { data: null, error: new Error("Ya existe una rifa activa. Termínala primero.") };
+    async getRaffleById(id: string): Promise<Raffle | null> {
+        const { data, error } = await supabase
+            .from('rifas')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            console.error("Error fetching raffle by id:", error);
+            return null;
+        }
+
+        return data as unknown as Raffle;
+    }
+
+    async createRaffle(data: Omit<Raffle, 'id' | 'estado' | 'created_at'>, estado: 'activa' | 'borrador' = 'activa'): Promise<{ data: Raffle | null, error: Error | null }> {
+        if (estado === 'activa') {
+            const currentActive = await this.getActiveRaffle();
+            if (currentActive && currentActive.estado === 'activa') {
+                return { data: null, error: new Error("Ya existe una rifa activa. Termínala primero para poder publicar una nueva.") };
+            }
         }
 
         const { data: newRaffle, error } = await supabase
             .from('rifas')
-            .insert([{ ...data, estado: 'activa' }])
+            .insert([{ ...data, estado }])
             .select()
             .single();
 
@@ -164,10 +195,21 @@ class Store {
             return { data: null, error: new Error("No hay rifa activa para actualizar.") };
         }
 
+        return this.updateRaffle(currentActive.id, updates);
+    }
+
+    async updateRaffle(id: string, updates: Partial<Raffle>): Promise<{ data: Raffle | null, error: Error | null }> {
+        if (updates.estado === 'activa') {
+            const currentActive = await this.getActiveRaffle();
+            if (currentActive && currentActive.id !== id) {
+                return { data: null, error: new Error("Ya existe una rifa activa. Termínala primero para poder publicar esta.") };
+            }
+        }
+
         const { data, error } = await supabase
             .from('rifas')
             .update(updates)
-            .eq('id', currentActive.id)
+            .eq('id', id)
             .select()
             .single();
 

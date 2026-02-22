@@ -8,6 +8,7 @@ import { mockStore, type Raffle, type Participant } from "@/lib/store";
 export default function AdminDashboardPage() {
     const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null);
     const [lastFinished, setLastFinished] = useState<Raffle | null>(null);
+    const [draftRaffles, setDraftRaffles] = useState<Raffle[]>([]);
     const [participants, setParticipants] = useState<Participant[]>([]);
     const [takenTickets, setTakenTickets] = useState<number[]>([]);
     const [loading, setLoading] = useState(true);
@@ -16,6 +17,9 @@ export default function AdminDashboardPage() {
     const [financialStats, setFinancialStats] = useState<Awaited<ReturnType<typeof mockStore.getFinancialStats>> | null>(null);
 
     const fetchStats = async () => {
+        const drafts = await mockStore.getDraftRaffles();
+        setDraftRaffles(drafts);
+
         const raffle = await mockStore.getActiveRaffle();
         setActiveRaffle(raffle);
         if (raffle) {
@@ -70,6 +74,44 @@ export default function AdminDashboardPage() {
                 )}
             </div>
 
+            {/* Drafts Section */}
+            {draftRaffles.length > 0 && (
+                <div className="space-y-4">
+                    <h2 className="text-xl font-syne font-bold flex items-center gap-2">
+                        <Edit className="w-5 h-5 text-gray-400" /> Rifas en Borrador
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {draftRaffles.map(draft => (
+                            <div key={draft.id} className="glass-panel p-5 rounded-2xl border-white/10 relative overflow-hidden group">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="font-bold text-lg text-white truncate pr-4">{draft.nombre}</h3>
+                                    <span className="bg-gray-500/20 text-gray-400 text-xs px-2 py-1 rounded-full border border-gray-500/30">Borrador</span>
+                                </div>
+                                <p className="text-sm text-gray-400 mb-4 line-clamp-2">{draft.descripcion}</p>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                    <Link
+                                        href={`/admin/rifa/nueva?id=${draft.id}`}
+                                        className="flex-1 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors border border-white/10 text-center flex items-center justify-center gap-2"
+                                    >
+                                        <Edit className="w-4 h-4" /> Editar
+                                    </Link>
+                                    <button
+                                        onClick={async () => {
+                                            const { error } = await mockStore.updateRaffle(draft.id, { estado: 'activa' });
+                                            if (error) alert(error.message);
+                                            else fetchStats();
+                                        }}
+                                        className="flex-1 bg-primary/20 hover:bg-primary/40 text-primary px-4 py-2 rounded-xl text-sm font-bold transition-colors border border-primary/30 text-center"
+                                    >
+                                        Publicar Ahora
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Caso: Hay una rifa recién finalizada pendiente de archivar */}
             {!activeRaffle && lastFinished ? (
                 <div className="glass-panel rounded-3xl p-10 border-yellow-500/20 flex flex-col justify-center items-center text-center space-y-4 relative overflow-hidden group bg-yellow-500/5">
@@ -115,7 +157,7 @@ export default function AdminDashboardPage() {
                     </div>
                     <h3 className="text-3xl font-syne font-bold">No hay rifa activa</h3>
                     <p className="text-muted-foreground max-w-md mx-auto pb-4">
-                        Para que tus clientes puedan comprar boletos en la página web, necesitas crear y publicar el próximo sorteo.
+                        Para que tus clientes puedan comprar boletos en la página web, necesitas publicar un borrador o crear el próximo sorteo.
                     </p>
                     <Link href="/admin/rifa/nueva" className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-4 rounded-xl transition-all hover:scale-105">
                         <Plus className="w-5 h-5" />

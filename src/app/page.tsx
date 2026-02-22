@@ -196,17 +196,25 @@ export default function LandingPage() {
             {/* HERO SECTION */}
             <section className="w-full max-w-5xl mx-auto px-6 py-12 md:py-24 flex flex-col md:flex-row items-center gap-12">
               <div className="flex-1 space-y-6 text-center md:text-left z-10">
-                {activeRaffle.estado === 'activa' ? (
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border-primary/30 text-primary text-sm font-medium animate-pulse">
-                    <span className="w-2 h-2 rounded-full bg-primary" />
-                    Rifa Activa
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border-yellow-500/30 text-yellow-500 text-sm font-medium animate-bounce shadow-[0_0_20px_rgba(234,179,8,0.2)]">
-                    <PartyPopper className="w-4 h-4" />
-                    ¡Rifa Finalizada Exitosamente!
-                  </div>
-                )}
+                <div className="flex flex-wrap justify-center md:justify-start items-center gap-3">
+                  {activeRaffle.estado === 'activa' ? (
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border-primary/30 text-primary text-sm font-medium animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-primary" />
+                      Rifa Activa
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-panel border-yellow-500/30 text-yellow-500 text-sm font-medium animate-bounce shadow-[0_0_20px_rgba(234,179,8,0.2)]">
+                      <PartyPopper className="w-4 h-4" />
+                      ¡Rifa Finalizada Exitosamente!
+                    </div>
+                  )}
+
+                  {activeRaffle.regalo_incluido && (
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/30 text-pink-300 text-sm font-bold shadow-[0_0_15px_rgba(236,72,153,0.15)] hover:scale-105 transition-transform cursor-default">
+                      🎁 Regalo Extra: {activeRaffle.regalo_incluido}
+                    </div>
+                  )}
+                </div>
 
                 <h2 className="font-syne text-5xl md:text-7xl font-extrabold tracking-tight text-glow">
                   {activeRaffle.nombre}
@@ -240,11 +248,27 @@ export default function LandingPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="pt-8 w-full md:w-auto">
+                  <div className="pt-8 w-full md:w-auto flex flex-col gap-8">
                     <a href="#boletos" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-xl sm:rounded-full font-bold text-lg transition-all hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(16,185,129,0.3)]">
                       <TicketIcon className="w-6 h-6" />
                       Ver {activeRaffle.total_boletos} Boletos
                     </a>
+
+                    {activeRaffle.fotos_regalo && activeRaffle.fotos_regalo.length > 0 && (
+                      <div className="space-y-4 max-w-sm mt-4 text-left mx-auto md:mx-0">
+                        <h3 className="font-syne text-xl font-bold flex items-center justify-center md:justify-start gap-2 text-pink-400">
+                          🎁 Regalo Extra: {activeRaffle.regalo_incluido}
+                        </h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {activeRaffle.fotos_regalo.map((url, i) => (
+                            <div key={i} className="aspect-square rounded-xl overflow-hidden border border-pink-500/30 shadow-[0_4px_20px_rgba(236,72,153,0.15)] group relative">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={url} alt={`Regalo Extra ${i + 1}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
