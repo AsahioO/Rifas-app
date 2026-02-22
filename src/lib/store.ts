@@ -86,10 +86,8 @@ class Store {
 
     async getFinancialStats(): Promise<{
         ingresosBrutos: number;
-        ingresosPendientes: number;
         ingresosProyectados: number;
         boletosVendidos: number;
-        boletosApartados: number;
         totalBoletos: number;
         precioBoleto: number;
     } | null> {
@@ -99,24 +97,17 @@ class Store {
         const participants = await this.getParticipants();
 
         let boletosVendidos = 0;
-        let boletosApartados = 0;
 
         participants.forEach(p => {
-            if (p.estado === 'pagado') {
-                boletosVendidos += p.boletos.length;
-            } else if (p.estado === 'apartado') {
-                boletosApartados += p.boletos.length;
-            }
+            boletosVendidos += p.boletos.length;
         });
 
         const precio = activeRaffle.precio_boleto;
 
         return {
             ingresosBrutos: boletosVendidos * precio,
-            ingresosPendientes: boletosApartados * precio,
             ingresosProyectados: activeRaffle.total_boletos * precio,
             boletosVendidos,
-            boletosApartados,
             totalBoletos: activeRaffle.total_boletos,
             precioBoleto: precio
         };
@@ -124,10 +115,8 @@ class Store {
 
     async getFinancialStatsForRaffle(raffleId: string, precioBoleto: number, totalBoletos: number): Promise<{
         ingresosBrutos: number;
-        ingresosPendientes: number;
         ingresosProyectados: number;
         boletosVendidos: number;
-        boletosApartados: number;
         totalBoletos: number;
         precioBoleto: number;
     }> {
@@ -139,22 +128,15 @@ class Store {
         const participants: Participant[] = error || !data ? [] : data;
 
         let boletosVendidos = 0;
-        let boletosApartados = 0;
 
         participants.forEach(p => {
-            if (p.estado === 'pagado') {
-                boletosVendidos += p.boletos.length;
-            } else if (p.estado === 'apartado') {
-                boletosApartados += p.boletos.length;
-            }
+            boletosVendidos += p.boletos.length;
         });
 
         return {
             ingresosBrutos: boletosVendidos * precioBoleto,
-            ingresosPendientes: boletosApartados * precioBoleto,
             ingresosProyectados: totalBoletos * precioBoleto,
             boletosVendidos,
-            boletosApartados,
             totalBoletos,
             precioBoleto
         };
@@ -213,7 +195,7 @@ class Store {
                 nombre,
                 telefono,
                 boletos,
-                estado: 'apartado'
+                estado: 'pagado'
             }])
             .select()
             .single();

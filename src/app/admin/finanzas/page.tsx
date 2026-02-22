@@ -7,12 +7,11 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
     PieChart, Pie, Cell
 } from 'recharts';
-import { DollarSign, TrendingUp, AlertCircle, Calendar, Wallet } from "lucide-react";
+import { DollarSign, TrendingUp, Calendar, Wallet } from "lucide-react";
 import { mockStore } from "@/lib/store";
 
 const COLORS = {
     pagados: "#10b981", // Emerald 500
-    apartados: "#f59e0b", // Amber 500
     disponibles: "#3b82f6", // Blue 500
 };
 
@@ -71,11 +70,10 @@ export default function FinanzasPage() {
         return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(amount);
     };
 
-    const boletosDisponibles = stats.totalBoletos - stats.boletosVendidos - stats.boletosApartados;
+    const boletosDisponibles = stats.totalBoletos - stats.boletosVendidos;
 
     const pieData = [
-        { name: 'Pagados', value: stats.boletosVendidos, color: COLORS.pagados },
-        { name: 'Apartados', value: stats.boletosApartados, color: COLORS.apartados },
+        { name: 'Vendidos', value: stats.boletosVendidos, color: COLORS.pagados },
         { name: 'Disponibles', value: boletosDisponibles, color: COLORS.disponibles },
     ];
 
@@ -97,7 +95,7 @@ export default function FinanzasPage() {
             </div>
 
             {/* KPIs Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="glass-panel p-6 rounded-3xl relative overflow-hidden group border-emerald-500/20">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[40px] -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition-colors" />
                     <div className="flex justify-between items-start mb-6">
@@ -109,20 +107,6 @@ export default function FinanzasPage() {
                     <div className="relative z-10">
                         <h2 className="text-5xl font-bold font-syne text-emerald-50">{formatCurrency(stats.ingresosBrutos)}</h2>
                         <p className="text-sm text-emerald-500/80 mt-2 font-medium">Dinero real ingresado (boletos pagados)</p>
-                    </div>
-                </div>
-
-                <div className="glass-panel p-6 rounded-3xl relative overflow-hidden group border-amber-500/20">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-[40px] -mr-10 -mt-10 group-hover:bg-amber-500/20 transition-colors" />
-                    <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-muted-foreground font-medium">Ingresos Pendientes</h3>
-                        <div className="p-2.5 bg-amber-500/20 rounded-xl text-amber-500 ring-1 ring-amber-500/30">
-                            <AlertCircle className="w-5 h-5" />
-                        </div>
-                    </div>
-                    <div className="relative z-10">
-                        <h2 className="text-5xl font-bold font-syne text-amber-50">{formatCurrency(stats.ingresosPendientes)}</h2>
-                        <p className="text-sm text-amber-500/80 mt-2 font-medium">Por cobrar (boletos apartados)</p>
                     </div>
                 </div>
 

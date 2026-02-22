@@ -259,17 +259,11 @@ export default function AdminDashboardPage() {
                                     Ver gráficas y detalles <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="glass-panel p-5 rounded-2xl border-emerald-500/10 flex flex-col justify-center">
-                                    <p className="text-sm text-muted-foreground mb-1">Ingresos Brutos (Pagado)</p>
+                                    <p className="text-sm text-muted-foreground mb-1">Ingresos de la Rifa</p>
                                     <h4 className="text-2xl font-syne font-bold text-emerald-400">
                                         {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(financialStats.ingresosBrutos)}
-                                    </h4>
-                                </div>
-                                <div className="glass-panel p-5 rounded-2xl border-amber-500/10 flex flex-col justify-center">
-                                    <p className="text-sm text-muted-foreground mb-1">Pendiente (Apartado)</p>
-                                    <h4 className="text-2xl font-syne font-bold text-amber-400">
-                                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(financialStats.ingresosPendientes)}
                                     </h4>
                                 </div>
                                 <div className="glass-panel p-5 rounded-2xl border-blue-500/10 flex flex-col justify-center relative overflow-hidden">
