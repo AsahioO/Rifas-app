@@ -261,22 +261,14 @@ export default function HistorialPage() {
                                         <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
                                     </div>
                                 ) : selectedStats ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="glass-panel p-5 rounded-2xl border-emerald-500/10 relative overflow-hidden">
                                             <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-emerald-500/10 to-transparent pointer-events-none" />
-                                            <p className="text-sm text-muted-foreground mb-1">Ingresos Brutos</p>
+                                            <p className="text-sm text-muted-foreground mb-1">Ingresos de la Rifa</p>
                                             <h4 className="text-2xl font-syne font-bold text-emerald-400">
                                                 {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(selectedStats.ingresosBrutos)}
                                             </h4>
                                             <p className="text-xs text-emerald-500/70 mt-2">{selectedStats.boletosVendidos} boletos pagados</p>
-                                        </div>
-
-                                        <div className="glass-panel p-5 rounded-2xl border-amber-500/10">
-                                            <p className="text-sm text-muted-foreground mb-1">Ingresos Pendientes</p>
-                                            <h4 className="text-2xl font-syne font-bold text-amber-400">
-                                                {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(selectedStats.ingresosPendientes)}
-                                            </h4>
-                                            <p className="text-xs text-amber-500/70 mt-2">{selectedStats.boletosApartados} boletos apartados</p>
                                         </div>
 
                                         <div className="glass-panel p-5 rounded-2xl border-blue-500/10">
@@ -287,7 +279,7 @@ export default function HistorialPage() {
                                             <div className="mt-2 w-full bg-black/50 rounded-full h-1.5 overflow-hidden">
                                                 <div
                                                     className="bg-emerald-500 h-full rounded-full transition-all duration-1000 ease-out"
-                                                    style={{ width: `${Math.min(100, ((selectedStats.ingresosBrutos + selectedStats.ingresosPendientes) / selectedStats.ingresosProyectados) * 100)}%` }}
+                                                    style={{ width: `${Math.min(100, (selectedStats.ingresosBrutos / selectedStats.ingresosProyectados) * 100)}%` }}
                                                 />
                                             </div>
                                         </div>
