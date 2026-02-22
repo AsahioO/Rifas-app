@@ -84,6 +84,44 @@ class Store {
         return participants.flatMap(p => p.boletos);
     }
 
+    async getFinancialStats(): Promise<{
+        ingresosBrutos: number;
+        ingresosPendientes: number;
+        ingresosProyectados: number;
+        boletosVendidos: number;
+        boletosApartados: number;
+        totalBoletos: number;
+        precioBoleto: number;
+    } | null> {
+        const activeRaffle = await this.getActiveRaffle();
+        if (!activeRaffle) return null;
+
+        const participants = await this.getParticipants();
+
+        let boletosVendidos = 0;
+        let boletosApartados = 0;
+
+        participants.forEach(p => {
+            if (p.estado === 'pagado') {
+                boletosVendidos += p.boletos.length;
+            } else if (p.estado === 'apartado') {
+                boletosApartados += p.boletos.length;
+            }
+        });
+
+        const precio = activeRaffle.precio_boleto;
+
+        return {
+            ingresosBrutos: boletosVendidos * precio,
+            ingresosPendientes: boletosApartados * precio,
+            ingresosProyectados: activeRaffle.total_boletos * precio,
+            boletosVendidos,
+            boletosApartados,
+            totalBoletos: activeRaffle.total_boletos,
+            precioBoleto: precio
+        };
+    }
+
     async createRaffle(data: Omit<Raffle, 'id' | 'estado' | 'created_at'>): Promise<{ data: Raffle | null, error: Error | null }> {
         const currentActive = await this.getActiveRaffle();
         if (currentActive && currentActive.estado === 'activa') {

@@ -13,6 +13,7 @@ export default function AdminDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [showEdit, setShowEdit] = useState(false);
     const [editData, setEditData] = useState<Partial<Raffle>>({});
+    const [financialStats, setFinancialStats] = useState<Awaited<ReturnType<typeof mockStore.getFinancialStats>> | null>(null);
 
     const fetchStats = async () => {
         const raffle = await mockStore.getActiveRaffle();
@@ -20,6 +21,7 @@ export default function AdminDashboardPage() {
         if (raffle) {
             setParticipants(await mockStore.getParticipants());
             setTakenTickets(await mockStore.getTakenTickets());
+            setFinancialStats(await mockStore.getFinancialStats());
         } else {
             // Si no hay activa, revisar si hay una recién finalizada para mostrar panel de archivo
             const finished = await mockStore.getLastFinishedRaffle();
@@ -244,6 +246,48 @@ export default function AdminDashboardPage() {
                             </div>
                         ) : null}
                     </div>
+
+                    {/* QUICK FINANCIAL SUMMARY */}
+                    {financialStats && (
+                        <div className="mt-8 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-syne font-bold text-xl flex items-center gap-2">
+                                    <Activity className="w-5 h-5 text-emerald-500" />
+                                    Resumen Financiero
+                                </h3>
+                                <Link href="/admin/finanzas" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition-colors flex items-center gap-1 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2 rounded-full">
+                                    Ver gráficas y detalles <ArrowRight className="w-4 h-4" />
+                                </Link>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="glass-panel p-5 rounded-2xl border-emerald-500/10 flex flex-col justify-center">
+                                    <p className="text-sm text-muted-foreground mb-1">Ingresos Brutos (Pagado)</p>
+                                    <h4 className="text-2xl font-syne font-bold text-emerald-400">
+                                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(financialStats.ingresosBrutos)}
+                                    </h4>
+                                </div>
+                                <div className="glass-panel p-5 rounded-2xl border-amber-500/10 flex flex-col justify-center">
+                                    <p className="text-sm text-muted-foreground mb-1">Pendiente (Apartado)</p>
+                                    <h4 className="text-2xl font-syne font-bold text-amber-400">
+                                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(financialStats.ingresosPendientes)}
+                                    </h4>
+                                </div>
+                                <div className="glass-panel p-5 rounded-2xl border-blue-500/10 flex flex-col justify-center relative overflow-hidden">
+                                    <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-blue-500/10 to-transparent pointer-events-none" />
+                                    <p className="text-sm text-muted-foreground mb-1">Proyección (Total)</p>
+                                    <h4 className="text-2xl font-syne font-bold text-blue-400">
+                                        {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(financialStats.ingresosProyectados)}
+                                    </h4>
+                                    <div className="mt-2 w-full bg-black/50 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className="bg-blue-500 h-full rounded-full"
+                                            style={{ width: `${Math.min(100, (financialStats.boletosVendidos / financialStats.totalBoletos) * 100)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Ticket, Users, History, Settings, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Ticket, Users, History, Settings, LogOut, Menu, X, DollarSign } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Sorteo Activo", href: "/admin/sorteo", icon: Ticket },
         { name: "Participantes", href: "/admin/participantes", icon: Users },
         { name: "Historial", href: "/admin/historial", icon: History },
+        { name: "Finanzas", href: "/admin/finanzas", icon: DollarSign },
     ];
 
     const handleLogout = async () => {
