@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, Trophy, Search, Loader2 } from "lucide-react";
+import { Clock, Trophy, Search, Loader2, X, Activity, Ticket, Users } from "lucide-react";
 import { mockStore, type Raffle } from "@/lib/store";
 
 export default function HistorialPage() {
     const [raffles, setRaffles] = useState<Raffle[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+
+    const [selectedRaffle, setSelectedRaffle] = useState<Raffle | null>(null);
+    const [selectedStats, setSelectedStats] = useState<Awaited<ReturnType<typeof mockStore.getFinancialStatsForRaffle>> | null>(null);
+    const [loadingStats, setLoadingStats] = useState(false);
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -22,6 +26,19 @@ export default function HistorialPage() {
         r.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.ganador_nombre?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const openModal = async (raffle: Raffle) => {
+        setSelectedRaffle(raffle);
+        setLoadingStats(true);
+        const stats = await mockStore.getFinancialStatsForRaffle(raffle.id, raffle.precio_boleto, raffle.total_boletos);
+        setSelectedStats(stats);
+        setLoadingStats(false);
+    };
+
+    const closeModal = () => {
+        setSelectedRaffle(null);
+        setSelectedStats(null);
+    };
 
     if (loading) {
         return (
@@ -62,7 +79,11 @@ export default function HistorialPage() {
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {filteredRaffles.map((raffle) => (
-                        <div key={raffle.id} className="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden group border border-white/5 hover:border-primary/30 transition-all">
+                        <div
+                            key={raffle.id}
+                            onClick={() => openModal(raffle)}
+                            className="glass-panel p-6 sm:p-8 rounded-3xl relative overflow-hidden group border border-white/5 hover:border-primary/30 transition-all cursor-pointer"
+                        >
 
                             {/* Decoración Vinoso/Dorado */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -132,6 +153,154 @@ export default function HistorialPage() {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Modal de Detalles Históricos */}
+            {selectedRaffle && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-[#09090b] w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border border-white/10 shadow-2xl animate-in zoom-in-95 duration-300">
+
+                        {/* Header del Modal */}
+                        <div className="sticky top-0 z-10 bg-[#09090b]/80 backdrop-blur-md border-b border-white/5 p-6 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-syne font-bold text-white flex items-center gap-3">
+                                    {selectedRaffle.nombre}
+                                    {selectedRaffle.ganador_nombre === 'Cancelada' ? (
+                                        <span className="bg-red-500/10 text-red-500/80 px-3 py-1 rounded-full text-xs font-bold border border-red-500/20">
+                                            Cancelada
+                                        </span>
+                                    ) : (
+                                        <span className="bg-yellow-500/20 text-yellow-500 px-3 py-1 rounded-full text-xs font-bold border border-yellow-500/30">
+                                            Finalizada
+                                        </span>
+                                    )}
+                                </h2>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Finalizada el {new Date(selectedRaffle.created_at).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeModal}
+                                className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Contenido del Modal */}
+                        <div className="p-6 md:p-8 space-y-8">
+
+                            {/* General Info Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {/* Imagen de la rifa */}
+                                <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-white/5 aspect-video relative">
+                                    {selectedRaffle.fotos && selectedRaffle.fotos.length > 0 ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={selectedRaffle.fotos[0]} alt={selectedRaffle.nombre} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-white/20">
+                                            <Trophy className="w-12 h-12" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Resumen del Sorteo */}
+                                <div className="space-y-6">
+                                    {selectedRaffle.ganador_nombre !== 'Cancelada' && (
+                                        <div className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border-primary/20">
+                                            <p className="text-xs uppercase tracking-widest text-primary font-syne mb-2">Gran Ganador</p>
+                                            <div className="flex items-end gap-3">
+                                                <h3 className="text-2xl font-bold text-white">{selectedRaffle.ganador_nombre || 'Sin registrar'}</h3>
+                                                {selectedRaffle.ganador_boleto && (
+                                                    <span className="bg-primary/20 text-primary px-3 py-1 rounded-lg text-lg font-bold border border-primary/20">
+                                                        #{selectedRaffle.ganador_boleto}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="glass-panel p-4 rounded-xl border-white/5 flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                                                <Ticket className="w-5 h-5 text-muted-foreground" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-muted-foreground mb-0.5">Precio</p>
+                                                <p className="font-bold font-syne text-white">${selectedRaffle.precio_boleto}</p>
+                                            </div>
+                                        </div>
+                                        <div className="glass-panel p-4 rounded-xl border-white/5 flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                                                <Users className="w-5 h-5 text-muted-foreground" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-muted-foreground mb-0.5">Boletos Totales</p>
+                                                <p className="font-bold font-syne text-white">{selectedRaffle.total_boletos}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">
+                                        {selectedRaffle.descripcion}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="h-[1px] w-full bg-white/10 my-4" />
+
+                            {/* Finanzas */}
+                            <div>
+                                <h3 className="font-syne font-bold text-xl flex items-center gap-2 mb-6">
+                                    <Activity className="w-5 h-5 text-emerald-500" />
+                                    Resumen Financiero Histórico
+                                </h3>
+
+                                {loadingStats ? (
+                                    <div className="h-32 flex items-center justify-center glass-panel rounded-2xl border-white/5">
+                                        <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+                                    </div>
+                                ) : selectedStats ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="glass-panel p-5 rounded-2xl border-emerald-500/10 relative overflow-hidden">
+                                            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-emerald-500/10 to-transparent pointer-events-none" />
+                                            <p className="text-sm text-muted-foreground mb-1">Ingresos Brutos</p>
+                                            <h4 className="text-2xl font-syne font-bold text-emerald-400">
+                                                {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(selectedStats.ingresosBrutos)}
+                                            </h4>
+                                            <p className="text-xs text-emerald-500/70 mt-2">{selectedStats.boletosVendidos} boletos pagados</p>
+                                        </div>
+
+                                        <div className="glass-panel p-5 rounded-2xl border-amber-500/10">
+                                            <p className="text-sm text-muted-foreground mb-1">Ingresos Pendientes</p>
+                                            <h4 className="text-2xl font-syne font-bold text-amber-400">
+                                                {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(selectedStats.ingresosPendientes)}
+                                            </h4>
+                                            <p className="text-xs text-amber-500/70 mt-2">{selectedStats.boletosApartados} boletos apartados</p>
+                                        </div>
+
+                                        <div className="glass-panel p-5 rounded-2xl border-blue-500/10">
+                                            <p className="text-sm text-muted-foreground mb-1">Proyección Alcanzada</p>
+                                            <h4 className="text-2xl font-syne font-bold text-white">
+                                                {new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(selectedStats.ingresosProyectados)}
+                                            </h4>
+                                            <div className="mt-2 w-full bg-black/50 rounded-full h-1.5 overflow-hidden">
+                                                <div
+                                                    className="bg-emerald-500 h-full rounded-full transition-all duration-1000 ease-out"
+                                                    style={{ width: `${Math.min(100, ((selectedStats.ingresosBrutos + selectedStats.ingresosPendientes) / selectedStats.ingresosProyectados) * 100)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="p-4 text-center text-muted-foreground bg-white/5 rounded-xl text-sm">
+                                        No se pudieron cargar las estadísticas financieras para esta rifa.
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

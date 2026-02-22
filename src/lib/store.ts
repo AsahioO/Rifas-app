@@ -122,6 +122,44 @@ class Store {
         };
     }
 
+    async getFinancialStatsForRaffle(raffleId: string, precioBoleto: number, totalBoletos: number): Promise<{
+        ingresosBrutos: number;
+        ingresosPendientes: number;
+        ingresosProyectados: number;
+        boletosVendidos: number;
+        boletosApartados: number;
+        totalBoletos: number;
+        precioBoleto: number;
+    }> {
+        const { data, error } = await supabase
+            .from('participantes')
+            .select('*')
+            .eq('rifa_id', raffleId);
+
+        const participants: Participant[] = error || !data ? [] : data;
+
+        let boletosVendidos = 0;
+        let boletosApartados = 0;
+
+        participants.forEach(p => {
+            if (p.estado === 'pagado') {
+                boletosVendidos += p.boletos.length;
+            } else if (p.estado === 'apartado') {
+                boletosApartados += p.boletos.length;
+            }
+        });
+
+        return {
+            ingresosBrutos: boletosVendidos * precioBoleto,
+            ingresosPendientes: boletosApartados * precioBoleto,
+            ingresosProyectados: totalBoletos * precioBoleto,
+            boletosVendidos,
+            boletosApartados,
+            totalBoletos,
+            precioBoleto
+        };
+    }
+
     async createRaffle(data: Omit<Raffle, 'id' | 'estado' | 'created_at'>): Promise<{ data: Raffle | null, error: Error | null }> {
         const currentActive = await this.getActiveRaffle();
         if (currentActive && currentActive.estado === 'activa') {
