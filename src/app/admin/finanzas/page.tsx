@@ -36,9 +36,7 @@ export default function FinanzasPage() {
                     if (!daysMap.has(day)) {
                         daysMap.set(day, { name: day, ingresos: 0 });
                     }
-                    if (p.estado === 'pagado') {
-                        daysMap.get(day).ingresos += amount;
-                    }
+                    daysMap.get(day).ingresos += amount;
                 });
 
                 // Convert map to array and reverse to chronological order if needed
