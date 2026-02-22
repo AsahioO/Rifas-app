@@ -151,7 +151,7 @@ function RaffleForm() {
             imageUrls = ["https://images.unsplash.com/photo-1603792907191-89e55f70099a?q=80&w=2670&auto=format&fit=crop"];
         }
 
-        let giftImageUrls: string[] = [...existingGiftImageUrls];
+        const giftImageUrls: string[] = [...existingGiftImageUrls];
 
         if (giftFiles.length > 0) {
             for (const file of giftFiles) {
@@ -183,6 +183,7 @@ function RaffleForm() {
 
         if (!payload.regalo_incluido || payload.regalo_incluido.trim() === "") {
             // Send empty string if cleared, so DB unsets it
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             payload.regalo_incluido = null as any; // hack to allow null in Partial<Raffle>
             payload.fotos_regalo = [];
         }
@@ -194,6 +195,7 @@ function RaffleForm() {
             const result = await mockStore.updateRaffle(editId, payload);
             storeError = result.error;
         } else {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const result = await mockStore.createRaffle(payload as any, submitTo);
             storeError = result.error;
         }

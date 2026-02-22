@@ -171,6 +171,7 @@ export default function LandingPage() {
                     {lastFinished.fotos && lastFinished.fotos.length > 0 && (
                       <div className="mt-10 max-w-sm mx-auto">
                         <div className="aspect-square rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={lastFinished.fotos[0]} alt="Premio" className="w-full h-full object-cover" />
                         </div>
                         <p className="text-muted-foreground text-sm mt-3">{lastFinished.descripcion}</p>
