@@ -38,6 +38,17 @@ const config: Config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        brand: {
+          bg: "var(--brand-bg)",
+          surface: "var(--brand-surface)",
+          text: "var(--brand-text)",
+          muted: "var(--brand-muted)",
+          accent: "var(--brand-accent)",
+          border: "var(--brand-border)",
+          sale: "var(--brand-sale)",
+          sold: "var(--brand-sold)",
+          wine: "var(--brand-wine)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -45,8 +56,8 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
-        syne: ["var(--font-inter)", "sans-serif"],
+        sans: ['"Google Sans"', '"Inter"', "sans-serif"],
+        serif: ['"Google Sans"', '"Inter"', "serif"],
       },
     },
   },

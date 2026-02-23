@@ -27,7 +27,7 @@ export default function FinanzasPage() {
                 setStats(financialStats);
 
                 // Procesar datos para la gráfica de Área (Ventas por día)
-                const participants = await mockStore.getParticipants();
+                const participants = financialStats.participants;
                 const daysMap = new Map();
 
                 participants.forEach(p => {
@@ -52,15 +52,15 @@ export default function FinanzasPage() {
         loadData();
     }, []);
 
-    if (loading) return <div className="p-8 text-center animate-pulse text-muted-foreground font-syne">Analizando datos financieros...</div>;
+    if (loading) return <div className="p-8 text-center animate-pulse text-brand-muted font-serif">Analizando datos financieros...</div>;
 
     if (!stats) return (
         <div className="flex flex-col items-center justify-center p-16 text-center">
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center text-muted-foreground mb-6">
+            <div className="w-20 h-20 bg-brand-surface border border-brand-border rounded-full flex items-center justify-center text-brand-muted mb-6 shadow-sm">
                 <Wallet className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-syne font-bold">Sin datos financieros</h2>
-            <p className="text-muted-foreground mt-4 max-w-sm">No hay una rifa activa para calcular finanzas. Crea una rifa para comenzar a recolectar analíticas.</p>
+            <h2 className="text-3xl font-serif font-bold text-brand-text">Sin datos financieros</h2>
+            <p className="text-brand-muted mt-4 max-w-sm">No hay una rifa activa para calcular finanzas. Crea una rifa para comenzar a recolectar analíticas.</p>
         </div>
     );
 
@@ -81,12 +81,12 @@ export default function FinanzasPage() {
         <div className="space-y-8 animate-in fade-in duration-700 fade-in-up">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div>
-                    <h1 className="text-4xl font-syne font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-emerald-600">
+                    <h1 className="text-4xl font-serif font-bold text-brand-text">
                         Inteligencia Financiera
                     </h1>
-                    <p className="text-muted-foreground mt-1">Análisis de rentabilidad y proyecciones de tu sorteo activo.</p>
+                    <p className="text-brand-muted mt-1">Análisis de rentabilidad y proyecciones de tu sorteo activo.</p>
                 </div>
-                <div className="glass-panel px-6 py-3 rounded-full border-emerald-500/20 text-emerald-400 font-bold flex items-center gap-2">
+                <div className="bg-brand-surface px-6 py-3 rounded-full border border-brand-border text-emerald-600 font-bold flex items-center gap-2 shadow-sm">
                     <TrendingUp className="w-5 h-5" />
                     Progreso Real: {progresoVentas}%
                 </div>
@@ -94,31 +94,31 @@ export default function FinanzasPage() {
 
             {/* KPIs Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="glass-panel p-6 rounded-3xl relative overflow-hidden group border-emerald-500/20">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-[40px] -mr-10 -mt-10 group-hover:bg-emerald-500/20 transition-colors" />
+                <div className="bg-brand-surface border border-brand-border shadow-sm p-6 rounded-3xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-[40px] -mr-10 -mt-10 group-hover:bg-emerald-100 transition-colors" />
                     <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-muted-foreground font-medium">Ingresos Brutos</h3>
-                        <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-500 ring-1 ring-emerald-500/30">
+                        <h3 className="text-brand-muted font-medium">Ingresos Brutos</h3>
+                        <div className="p-2.5 bg-emerald-100 rounded-xl text-emerald-600 ring-1 ring-emerald-200">
                             <DollarSign className="w-5 h-5" />
                         </div>
                     </div>
                     <div className="relative z-10">
-                        <h2 className="text-5xl font-bold font-syne text-emerald-50">{formatCurrency(stats.ingresosBrutos)}</h2>
-                        <p className="text-sm text-emerald-500/80 mt-2 font-medium">Dinero real ingresado (boletos pagados)</p>
+                        <h2 className="text-5xl font-bold font-serif text-brand-text">{formatCurrency(stats.ingresosBrutos)}</h2>
+                        <p className="text-sm text-emerald-600/80 mt-2 font-medium">Dinero real ingresado (boletos pagados)</p>
                     </div>
                 </div>
 
-                <div className="glass-panel p-6 rounded-3xl relative overflow-hidden group border-blue-500/20">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-[40px] -mr-10 -mt-10 group-hover:bg-blue-500/20 transition-colors" />
+                <div className="bg-brand-surface border border-brand-border shadow-sm p-6 rounded-3xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-[40px] -mr-10 -mt-10 group-hover:bg-blue-100 transition-colors" />
                     <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-muted-foreground font-medium">Proyección Máxima</h3>
-                        <div className="p-2.5 bg-blue-500/20 rounded-xl text-blue-500 ring-1 ring-blue-500/30">
+                        <h3 className="text-brand-muted font-medium">Proyección Máxima</h3>
+                        <div className="p-2.5 bg-blue-100 rounded-xl text-blue-600 ring-1 ring-blue-200">
                             <Wallet className="w-5 h-5" />
                         </div>
                     </div>
                     <div className="relative z-10">
-                        <h2 className="text-5xl font-bold font-syne text-blue-50">{formatCurrency(stats.ingresosProyectados)}</h2>
-                        <p className="text-sm text-blue-500/80 mt-2 font-medium">Si el boletaje se agota (Sould out)</p>
+                        <h2 className="text-5xl font-bold font-serif text-brand-text">{formatCurrency(stats.ingresosProyectados)}</h2>
+                        <p className="text-sm text-blue-600/80 mt-2 font-medium">Si el boletaje se agota (Sould out)</p>
                     </div>
                 </div>
             </div>
@@ -127,13 +127,13 @@ export default function FinanzasPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {/* Evolution Chart */}
-                <div className="lg:col-span-2 glass-panel p-6 rounded-3xl border-white/5 flex flex-col min-h-[400px]">
+                <div className="lg:col-span-2 bg-brand-surface border border-brand-border shadow-sm p-6 rounded-3xl flex flex-col min-h-[400px]">
                     <div className="flex justify-between items-center mb-8">
                         <div>
-                            <h3 className="text-xl font-syne font-bold">Evolución de Ingresos</h3>
-                            <p className="text-sm text-muted-foreground">Flujo de dinero por boletos pagados en el tiempo</p>
+                            <h3 className="text-xl font-serif font-bold text-brand-text">Evolución de Ingresos</h3>
+                            <p className="text-sm text-brand-muted">Flujo de dinero por boletos pagados en el tiempo</p>
                         </div>
-                        <Calendar className="w-5 h-5 text-muted-foreground" />
+                        <Calendar className="w-5 h-5 text-brand-muted" />
                     </div>
                     <div className="flex-1 w-full relative">
                         {dailyData.length > 0 ? (
@@ -141,28 +141,29 @@ export default function FinanzasPage() {
                                 <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.6} />
+                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2} />
                                             <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                                     <XAxis
                                         dataKey="name"
-                                        stroke="#ffffff50"
-                                        tick={{ fill: '#ffffff80', fontSize: 12 }}
+                                        stroke="#9ca3af"
+                                        tick={{ fill: '#6b7280', fontSize: 12, fontFamily: 'inherit' }}
                                         tickLine={false}
                                         axisLine={false}
                                     />
                                     <YAxis
-                                        stroke="#ffffff50"
-                                        tick={{ fill: '#ffffff80', fontSize: 12 }}
+                                        stroke="#9ca3af"
+                                        tick={{ fill: '#6b7280', fontSize: 12, fontFamily: 'inherit' }}
                                         tickLine={false}
                                         axisLine={false}
                                         tickFormatter={(val) => `$${val}`}
                                     />
                                     <RechartsTooltip
-                                        contentStyle={{ backgroundColor: '#09090b', borderColor: '#ffffff20', borderRadius: '12px' }}
+                                        contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                         itemStyle={{ color: '#10b981', fontWeight: 'bold' }}
+                                        labelStyle={{ color: '#374151', fontWeight: 'bold', marginBottom: '4px' }}
                                         formatter={(value: unknown) => [formatCurrency(value as number), "Ingresos"]}
                                     />
                                     <Area
@@ -172,12 +173,12 @@ export default function FinanzasPage() {
                                         strokeWidth={3}
                                         fillOpacity={1}
                                         fill="url(#colorIngresos)"
-                                        activeDot={{ r: 6, fill: "#10b981", stroke: "#000", strokeWidth: 2 }}
+                                        activeDot={{ r: 6, fill: "#10b981", stroke: "#ffffff", strokeWidth: 2 }}
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground italic">
+                            <div className="absolute inset-0 flex items-center justify-center text-brand-muted italic">
                                 Esperando las primeras ventas para trazar la curva...
                             </div>
                         )}
@@ -185,10 +186,10 @@ export default function FinanzasPage() {
                 </div>
 
                 {/* Distribution Chart */}
-                <div className="glass-panel p-6 rounded-3xl border-white/5 flex flex-col">
+                <div className="bg-brand-surface border border-brand-border shadow-sm p-6 rounded-3xl flex flex-col">
                     <div className="mb-2">
-                        <h3 className="text-xl font-syne font-bold">Distribución de Boletos</h3>
-                        <p className="text-sm text-muted-foreground">Estado actual del boletaje</p>
+                        <h3 className="text-xl font-serif font-bold text-brand-text">Distribución de Boletos</h3>
+                        <p className="text-sm text-brand-muted">Estado actual del boletaje</p>
                     </div>
                     <div className="flex-1 min-h-[250px] relative mt-4">
                         <ResponsiveContainer width="100%" height="100%">
@@ -208,16 +209,16 @@ export default function FinanzasPage() {
                                     ))}
                                 </Pie>
                                 <RechartsTooltip
-                                    contentStyle={{ backgroundColor: '#09090b', borderColor: '#ffffff20', borderRadius: '12px' }}
-                                    itemStyle={{ color: 'white', fontWeight: 'bold' }}
+                                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    itemStyle={{ color: '#374151', fontWeight: 'bold' }}
                                     formatter={(value: unknown) => [`${value} boletos`, "Cantidad"]}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
                         {/* Center text for the donut chart */}
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-4">
-                            <span className="text-3xl font-bold font-syne text-white">{stats.totalBoletos}</span>
-                            <span className="text-xs text-muted-foreground uppercase tracking-widest">Total</span>
+                            <span className="text-3xl font-bold font-serif text-brand-text">{stats.totalBoletos}</span>
+                            <span className="text-xs text-brand-muted uppercase tracking-widest font-medium">Total</span>
                         </div>
                     </div>
                     <div className="space-y-3 mt-4">
@@ -225,9 +226,9 @@ export default function FinanzasPage() {
                             <div key={i} className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} />
-                                    <span className="text-sm font-medium text-white/80">{d.name}</span>
+                                    <span className="text-sm font-medium text-brand-text/80">{d.name}</span>
                                 </div>
-                                <span className="font-syne font-bold text-sm bg-white/5 px-3 py-1 rounded-lg">
+                                <span className="font-serif font-bold text-sm bg-brand-bg px-3 py-1 rounded-lg border border-brand-border text-brand-text">
                                     {((d.value / stats.totalBoletos) * 100).toFixed(0)}%
                                 </span>
                             </div>

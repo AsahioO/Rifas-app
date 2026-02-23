@@ -37,7 +37,7 @@ class Store {
             .eq('estado', 'activa')
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
         if (error || !data) return null;
         return data as Raffle;
@@ -50,7 +50,7 @@ class Store {
             .in('estado', ['finalizada', 'archivada'])
             .order('created_at', { ascending: false })
             .limit(1)
-            .single();
+            .maybeSingle();
 
         if (error || !data) return null;
         if (data.estado === 'archivada') return null;
@@ -79,22 +79,26 @@ class Store {
         return data as Raffle[];
     }
 
-    async getParticipants(): Promise<Participant[]> {
-        const activeRaffle = await this.getActiveRaffle();
-        if (!activeRaffle) return [];
+    async getParticipants(activeRaffleId?: string): Promise<Participant[]> {
+        let raffleId = activeRaffleId;
+        if (!raffleId) {
+            const activeRaffle = await this.getActiveRaffle();
+            if (!activeRaffle) return [];
+            raffleId = activeRaffle.id;
+        }
 
         const { data, error } = await supabase
             .from('participantes')
             .select('*')
-            .eq('rifa_id', activeRaffle.id)
+            .eq('rifa_id', raffleId)
             .order('created_at', { ascending: false });
 
         if (error || !data) return [];
         return data as Participant[];
     }
 
-    async getTakenTickets(): Promise<number[]> {
-        const participants = await this.getParticipants();
+    async getTakenTickets(activeRaffleId?: string): Promise<number[]> {
+        const participants = await this.getParticipants(activeRaffleId);
         return participants.flatMap(p => p.boletos);
     }
 
@@ -104,11 +108,12 @@ class Store {
         boletosVendidos: number;
         totalBoletos: number;
         precioBoleto: number;
+        participants: Participant[];
     } | null> {
         const activeRaffle = await this.getActiveRaffle();
         if (!activeRaffle) return null;
 
-        const participants = await this.getParticipants();
+        const participants = await this.getParticipants(activeRaffle.id);
 
         let boletosVendidos = 0;
 
@@ -123,7 +128,8 @@ class Store {
             ingresosProyectados: activeRaffle.total_boletos * precio,
             boletosVendidos,
             totalBoletos: activeRaffle.total_boletos,
-            precioBoleto: precio
+            precioBoleto: precio,
+            participants
         };
     }
 
@@ -161,7 +167,7 @@ class Store {
             .from('rifas')
             .select('*')
             .eq('id', id)
-            .single();
+            .maybeSingle();
 
         if (error) {
             console.error("Error fetching raffle by id:", error);
@@ -223,7 +229,7 @@ class Store {
             return { data: null, error: new Error("No hay rifa activa para registrar participantes.") };
         }
 
-        const taken = await this.getTakenTickets();
+        const taken = await this.getTakenTickets(activeRaffle.id);
         const conflicts = boletos.filter(b => taken.includes(b));
 
         if (conflicts.length > 0) {

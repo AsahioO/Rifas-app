@@ -205,10 +205,10 @@ export default function SorteoPage() {
 
     if (!activeRaffle) {
         return (
-            <div className="glass-panel border-dashed border-2 px-6 py-16 rounded-3xl text-center space-y-4 max-w-2xl mx-auto">
-                <Trophy className="w-12 h-12 text-muted-foreground mx-auto" />
-                <h3 className="text-2xl font-syne font-bold">No hay rifa activa para sortear</h3>
-                <Link href="/admin" className="text-primary hover:underline inline-block mt-4">Volver al Inicio</Link>
+            <div className="bg-brand-surface border-brand-border border-dashed border-2 px-6 py-16 rounded-3xl text-center space-y-4 max-w-2xl mx-auto shadow-sm">
+                <Trophy className="w-12 h-12 text-brand-muted mx-auto" />
+                <h3 className="text-2xl font-serif font-bold text-brand-text">No hay rifa activa para sortear</h3>
+                <Link href="/admin" className="text-brand-accent hover:underline inline-block mt-4 font-medium">Volver al Inicio</Link>
             </div>
         );
     }
@@ -217,14 +217,14 @@ export default function SorteoPage() {
         <div className="min-h-[80vh] flex flex-col pt-8 animate-in fade-in duration-500 overflow-hidden">
             {/* Header */}
             <div className="flex items-center gap-4 mb-8">
-                <Link href="/admin" className="p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors z-10 relative">
+                <Link href="/admin" className="p-2 text-brand-muted hover:text-brand-accent hover:bg-brand-accent/5 rounded-full transition-colors z-10 relative">
                     <ArrowLeft className="w-5 h-5" />
                 </Link>
                 <div className="z-10 relative">
-                    <h1 className="text-2xl md:text-3xl font-syne font-bold flex items-center gap-2">
+                    <h1 className="text-2xl md:text-3xl font-serif font-bold text-brand-text flex items-center gap-2">
                         Ruleta del Sorteo
                     </h1>
-                    <p className="text-muted-foreground text-sm uppercase tracking-wider">
+                    <p className="text-brand-muted text-sm uppercase tracking-wider font-medium mt-1">
                         {activeRaffle.nombre} • Ganador al {activeRaffle.giro_ganador}° intento
                     </p>
                 </div>
@@ -232,10 +232,10 @@ export default function SorteoPage() {
 
             {!canDraw ? (
                 <div className="flex-1 flex items-center justify-center">
-                    <div className="glass-panel text-center p-12 rounded-3xl space-y-4 max-w-md mx-auto">
-                        <Trophy className="w-16 h-16 text-yellow-500/50 mx-auto" />
-                        <h2 className="text-2xl font-bold font-syne">Sorteo no disponible</h2>
-                        <p className="text-muted-foreground">Aún no hay ningún boleto vendido (0 reservaciones). Se requieren participantes para girar la ruleta.</p>
+                    <div className="bg-brand-surface border border-brand-border shadow-sm text-center p-12 rounded-3xl space-y-4 max-w-md mx-auto">
+                        <Trophy className="w-16 h-16 text-brand-accent/50 mx-auto" />
+                        <h2 className="text-2xl font-bold font-serif text-brand-text">Sorteo no disponible</h2>
+                        <p className="text-brand-muted">Aún no hay ningún boleto vendido (0 reservaciones). Se requieren participantes para girar la ruleta.</p>
                     </div>
                 </div>
             ) : (
@@ -254,15 +254,15 @@ export default function SorteoPage() {
                             {/* Arrow Pointer */}
                             {!winner && (
                                 <div className="absolute -top-4 sm:-top-6 left-1/2 -translate-x-1/2 z-40">
-                                    <div className="w-0 h-0 border-l-[15px] sm:border-l-[20px] border-l-transparent border-r-[15px] sm:border-r-[20px] border-r-transparent border-t-[30px] sm:border-t-[40px] border-t-yellow-400 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]" />
+                                    <div className="w-0 h-0 border-l-[15px] sm:border-l-[20px] border-l-transparent border-r-[15px] sm:border-r-[20px] border-r-transparent border-t-[30px] sm:border-t-[40px] border-t-brand-accent drop-shadow-md" />
                                 </div>
                             )}
 
                             {/* Wheel Container SVG */}
                             <div
-                                className={`absolute inset-0 rounded-full shadow-2xl overflow-hidden transition-transform bg-zinc-950
+                                className={`absolute inset-0 rounded-full shadow-2xl overflow-hidden transition-transform bg-zinc-900
                                     ${isResetting ? 'duration-0' : 'duration-[4000ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]'}
-                                    ${winner ? 'border-4 sm:border-8 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.3)]' : 'border-4 sm:border-8 border-white/20'}
+                                    ${winner ? 'border-4 sm:border-8 border-brand-accent shadow-[0_0_50px_rgba(200,169,110,0.3)]' : 'border-4 sm:border-8 border-brand-border'}
                                 `}
                                 style={{ transform: `rotate(${rotation}deg)` }}
                             >
@@ -310,26 +310,26 @@ export default function SorteoPage() {
 
                             {/* Center Pin / Results Overlays */}
                             {(!spunCard && !winner) && (
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 sm:w-10 sm:h-10 bg-zinc-900 border-2 sm:border-4 border-zinc-700/80 rounded-full z-20 shadow-lg" />
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 sm:w-10 sm:h-10 bg-brand-surface border-2 sm:border-4 border-brand-border rounded-full z-20 shadow-lg" />
                             )}
 
                             {spunCard && !winner && (
-                                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 rounded-full animate-in zoom-in duration-300">
+                                <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full animate-in zoom-in duration-300">
                                     <div className="text-center px-4">
-                                        <h3 className="text-red-500 font-bold text-4xl sm:text-5xl font-syne uppercase tracking-wider drop-shadow-md pb-2">¡Eliminado!</h3>
-                                        <p className="text-white/80 text-sm sm:text-base font-bold uppercase tracking-widest text-glow font-syne mt-2">{currentIntento}° al agua</p>
-                                        <p className="text-white text-3xl sm:text-4xl mt-2 font-bold tabular-nums">#{spunCard.boleto}</p>
-                                        <p className="text-white/80 truncate w-full mt-1 text-sm sm:text-lg">{spunCard.nombre}</p>
+                                        <h3 className="text-red-500 font-bold text-4xl sm:text-5xl font-serif uppercase tracking-wider drop-shadow-sm pb-2">¡Eliminado!</h3>
+                                        <p className="text-brand-muted text-sm sm:text-base font-bold uppercase tracking-widest mt-2">{currentIntento}° al agua</p>
+                                        <p className="text-brand-text text-3xl sm:text-4xl mt-2 font-bold tabular-nums">#{spunCard.boleto}</p>
+                                        <p className="text-brand-muted truncate w-full mt-1 text-sm sm:text-lg font-medium">{spunCard.nombre}</p>
                                     </div>
                                 </div>
                             )}
 
                             {winner && (
-                                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/85 rounded-full animate-in zoom-in duration-700">
-                                    <PartyPopper className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-500 mb-2 sm:mb-4 animate-bounce" />
-                                    <h3 className="text-yellow-500 font-bold text-4xl sm:text-5xl font-syne uppercase drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]">¡GANADOR!</h3>
-                                    <p className="text-white text-5xl sm:text-6xl font-bold mt-2 font-syne drop-shadow-md">#{winner.boleto}</p>
-                                    <p className="text-white/90 text-lg sm:text-2xl mt-4 truncate px-8 w-full text-center" title={winner.nombre}>{winner.nombre}</p>
+                                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-brand-surface/95 backdrop-blur-md rounded-full animate-in zoom-in duration-700 shadow-2xl">
+                                    <PartyPopper className="w-12 h-12 sm:w-16 sm:h-16 text-brand-accent mb-2 sm:mb-4 animate-bounce" />
+                                    <h3 className="text-brand-accent font-bold text-4xl sm:text-5xl font-serif uppercase drop-shadow-[0_0_15px_rgba(200,169,110,0.5)]">¡GANADOR!</h3>
+                                    <p className="text-brand-text text-5xl sm:text-6xl font-bold mt-2 font-serif drop-shadow-sm">#{winner.boleto}</p>
+                                    <p className="text-brand-muted text-lg sm:text-2xl mt-4 truncate px-8 w-full text-center" title={winner.nombre}>{winner.nombre}</p>
                                 </div>
                             )}
 
@@ -342,10 +342,10 @@ export default function SorteoPage() {
                                     onClick={handleDrawClick}
                                     disabled={isDrawing || N === 0}
                                     className={`
-                                        relative group overflow-hidden px-6 py-4 sm:px-12 sm:py-5 rounded-full font-bold text-sm sm:text-lg font-syne transition-all z-40
+                                        relative group overflow-hidden px-8 py-4 sm:px-12 sm:py-5 rounded-full font-bold text-sm sm:text-lg transition-all z-40 shadow-lg
                                         ${isDrawing || N === 0
-                                            ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed scale-95'
-                                            : 'bg-gradient-to-r from-primary to-green-400 text-zinc-950 hover:scale-105 shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:shadow-[0_0_60px_rgba(16,185,129,0.5)]'
+                                            ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed scale-95'
+                                            : 'bg-brand-accent text-white hover:scale-105 hover:bg-brand-accent/90 hover:shadow-xl'
                                         }
                                     `}
                                 >
@@ -361,9 +361,9 @@ export default function SorteoPage() {
                                     )}
                                 </button>
                             ) : (
-                                <div className="text-center space-y-4 relative z-40">
-                                    <p className="text-emerald-400 font-bold text-lg border-b border-emerald-500/20 pb-2">Sorteo Finalizado Exitosamente</p>
-                                    <Link href="/admin" className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full font-bold transition-all inline-block hover:-translate-y-1 mt-2">
+                                <div className="text-center space-y-4 relative z-40 w-full max-w-sm mx-auto">
+                                    <p className="text-brand-accent font-bold text-lg border-b border-brand-border pb-2">Sorteo Finalizado Exitosamente</p>
+                                    <Link href="/admin" className="px-8 py-4 bg-white hover:bg-zinc-50 border border-brand-border rounded-full font-bold transition-all inline-block hover:-translate-y-1 mt-4 text-brand-text shadow-sm w-full">
                                         Volver al Dashboard
                                     </Link>
                                 </div>
@@ -372,46 +372,49 @@ export default function SorteoPage() {
                     </div>
 
                     {/* Right: History / Summary */}
-                    <div className="w-full lg:max-w-sm glass-panel p-6 sm:p-8 rounded-3xl h-[400px] sm:h-[600px] flex flex-col border border-white/5 shadow-2xl relative z-20">
-                        <h3 className="font-syne font-bold text-xl mb-6 flex items-center justify-between border-b border-white/10 pb-4">
-                            Registro
-                            <span className="text-sm font-normal text-muted-foreground bg-white/5 px-2 py-1 rounded">
+                    <div className="w-full lg:max-w-sm bg-brand-surface p-6 sm:p-8 rounded-3xl h-[400px] sm:h-[600px] flex flex-col border border-brand-border shadow-md relative z-20">
+                        <div className="flex items-center justify-between border-b border-brand-border pb-4 mb-6">
+                            <h3 className="font-serif font-bold text-xl text-brand-text">
+                                Registro
+                            </h3>
+                            <span className="text-sm font-medium text-brand-accent bg-brand-accent/10 px-3 py-1 rounded-full">
                                 {allTakenTickets.length} Vendidos
                             </span>
-                        </h3>
+                        </div>
 
                         <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                             {/* Eliminados List */}
                             {eliminatedTickets.map((tc, idx) => (
-                                <div key={`eliminated-${tc}-${idx}`} className="flex items-center justify-between p-4 bg-red-500/5 border border-red-500/10 rounded-xl animate-in slide-in-from-right duration-300">
+                                <div key={`eliminated-${tc}-${idx}`} className="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-xl animate-in slide-in-from-right duration-300">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center font-bold text-xs">
+                                        <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs shrink-0">
                                             {idx + 1}°
                                         </div>
-                                        <span className="text-white/60 line-through decoration-red-500/50">Boleto #{tc}</span>
+                                        <span className="text-brand-text/60 line-through decoration-red-400 font-medium">Boleto #{tc}</span>
                                     </div>
-                                    <span className="text-xs uppercase tracking-wider text-red-500/80 font-bold">Agua</span>
+                                    <span className="text-xs uppercase tracking-wider text-red-600/80 font-bold bg-white px-2 py-1 rounded-md border border-red-100">Agua</span>
                                 </div>
                             ))}
 
                             {/* Winner if exists */}
                             {winner && (
-                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-500/20 to-yellow-600/20 border border-yellow-500/30 rounded-xl animate-in slide-in-from-bottom duration-500 ease-bounce mt-4 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-                                    <div className="flex items-center gap-3 w-3/4">
-                                        <div className="w-8 h-8 rounded-full bg-yellow-500 text-yellow-950 flex items-center justify-center font-bold text-xs shrink-0">
-                                            <Trophy className="w-4 h-4" />
+                                <div className="flex items-center justify-between p-4 bg-brand-accent/10 border border-brand-accent/20 rounded-xl animate-in slide-in-from-bottom duration-500 ease-bounce mt-4 shadow-sm relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-brand-accent/5 to-transparent pointer-events-none" />
+                                    <div className="flex items-center gap-3 w-3/4 relative z-10">
+                                        <div className="w-10 h-10 rounded-full bg-brand-accent text-white flex items-center justify-center font-bold shrink-0 shadow-inner">
+                                            <Trophy className="w-5 h-5" />
                                         </div>
                                         <div className="flex flex-col overflow-hidden">
-                                            <span className="text-yellow-500 font-bold block leading-none">Boleto #{winner.boleto}</span>
-                                            <span className="text-yellow-500/60 text-xs block truncate mt-1" title={winner.nombre}>{winner.nombre}</span>
+                                            <span className="text-brand-text font-bold block leading-none text-lg">Boleto #{winner.boleto}</span>
+                                            <span className="text-brand-muted text-sm block truncate mt-1 font-medium" title={winner.nombre}>{winner.nombre}</span>
                                         </div>
                                     </div>
-                                    <span className="text-xs font-bold uppercase tracking-wider text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded ml-2">Gana</span>
+                                    <span className="text-xs font-bold uppercase tracking-wider text-brand-accent bg-white border border-brand-accent/20 px-3 py-1.5 rounded-full ml-2 relative z-10 shadow-sm">Gana</span>
                                 </div>
                             )}
 
                             {eliminatedTickets.length === 0 && !winner && (
-                                <div className="text-center py-12 text-muted-foreground italic text-sm">
+                                <div className="text-center py-12 text-brand-muted font-medium text-sm border-2 border-dashed border-brand-border rounded-xl">
                                     El sorteo aún no comienza.<br />Los boletos eliminados aparecerán aquí.
                                 </div>
                             )}

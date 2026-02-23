@@ -1,22 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+import { ToastContainer } from "@/components/ui/Toast";
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#000000",
+  themeColor: "#F7F5F2",
 };
 
 export const metadata: Metadata = {
   title: "WhatsHome Rifas | Gana grandes premios",
   description: "Participa en nuestras exclusivas rifas y gana increíbles productos.",
   appleWebApp: {
-    capable: true,
     statusBarStyle: "default",
     title: "WhatsHome Rifas",
   },
@@ -31,9 +28,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark scroll-smooth">
-      <body className={cn(inter.variable, "font-sans antialiased text-foreground min-h-screen bg-background")}>
+    <html lang="es" className="scroll-smooth">
+      <head>
+        <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
+      </head>
+      <body className={cn("font-sans antialiased text-brand-text min-h-screen bg-brand-bg")}>
         {children}
+        <ToastContainer />
       </body>
     </html>
   );
