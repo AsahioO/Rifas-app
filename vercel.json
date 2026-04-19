@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/keep-alive?secret=0ca2287000b89ab3ecd82015de108751ec7e85b75e98c848cecbc289636442b9",
+      "schedule": "0 12 * * *"
+    }
+  ]
+}

@@ -1,0 +1,135 @@
+# Plan de Migración: HTML → ESC/POS Nativo (POS-58, 58mm)
+
+## Contexto
+
+El sistema actual tiene **dos rutas de impresión**:
+1. **`printViaSystem()`** — iframe HTML + CSS + `window.print()` (la que usan hoy en producción)
+2. **`printTicket()`** — Web Serial / Bluetooth → `ticketToEscPos()` convierte texto a bytes ESC/POS (existe pero es básico, sin QR nativo)
+
+El backend (`ticketService.js`) genera el texto plano del ticket. El frontend lo renderiza.
+
+**Objetivo**: Reemplazar la ruta `ticketToEscPos()` con `escpos-encoder` para generar buffers con QR nativo, y mejorar `printViaSystem()` como fallback.
+
+---
+
+## Análisis del Estado Actual
+
+| Componente | Estado | Observaciones |
+|---|---|---|
+| `ticketService.js` (backend) | ✅ Sólido | Genera texto plano con `center()`, `justify()`, 32 chars. No requiere cambios grandes |
+| `printerService.js` (frontend) | ⚠️ Parcial | Ya tiene Web Serial + Bluetooth + ESC/POS constants, pero `ticketToEscPos()` es simple text-to-bytes sin QR nativo |
+| `printViaSystem()` | ⚠️ HTML | Usa iframe + CSS + QRCode.toDataURL(). Depende del driver de Windows |
+| `Cashier.jsx` | ✅ Conectado | Importa `printerPrint`, `printViaSystem`, `autoReconnect`, `getConnectionStatus` |
+
+---
+
+## Propuesta de Arquitectura
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Cashier.jsx                        │
+│  Llama: printTicket(ticketContent) o printViaSystem() │
+└────────────┬────────────────────┬────────────────────┘
+             │                    │
+     ┌───────▼───────┐   ┌───────▼────────┐
+     │  RUTA RAW     │   │  RUTA FALLBACK │
+     │  (ESC/POS)    │   │  (window.print)│
+     │               │   │                │
+     │ escpos-encoder│   │ iframe + CSS   │
+     │ ↓ QR nativo   │   │ ↓ QR imagen    │
+     │ ↓ Uint8Array  │   │ ↓ HTML render  │
+     └───────┬───────┘   └───────┬────────┘
+             │                    │
+     ┌───────▼───────┐   ┌───────▼────────┐
+     │ Web Serial    │   │ window.print() │
+     │ (9600 baud)   │   │ POS Driver     │
+     │ ── ó ──       │   │                │
+     │ Web Bluetooth │   │                │
+     └───────────────┘   └────────────────┘
+```
+
+> [!IMPORTANT]
+> **Decisión de puente**: Usaremos **Web Serial API** como ruta principal (ya implementada, funciona en Chrome/Edge, soporta USB ahora y se puede adaptar a Ethernet después con un proxy). **No QZ Tray** — agrega complejidad y dependencia de Java que no justifica el caso de uso actual.
+
+---
+
+## Propuestos Cambios
+
+### Frontend
+
+#### [MODIFY] [printerService.js](file:///c:/Users/sopes/OneDrive/Escritorio/Cafeteria-EC/frontend/src/services/printerService.js)
+
+**Reemplazar `ticketToEscPos()`** (líneas 80-135) por nueva función `buildEscPosBuffer()` usando `escpos-encoder`:
+
+- Instalar: `npm install @point-of-sale/receipt-printer-encoder` (sucesor moderno de `escpos-encoder`, misma API)
+- Funcionalidad nueva:
+  - `initialize()` + codepage CP858 para español (ñ, á, é, etc.)
+  - Encabezado: align center + bold + texto negocio + teléfono + redes sociales
+  - Separadores: `================================`
+  - Productos: align left, cada línea `${qty}x ${name}` justificada con subtotal a la derecha
+  - Notas de items: indentadas con `>>`
+  - Sección de totales: bold + double height para TOTAL
+  - Servicio sugerido 10%: texto centrado
+  - **QR nativo**: `.qrcode('https://www.instagram.com/lalangostadechicagarcia/')` — usa comandos GS(k) del firmware, no imagen
+  - Texto "Síguenos en Instagram" centrado
+  - Feed + corte parcial
+- Eliminar: constantes `ESCPOS` manuales (líneas 9-29), `textToBytes()` (líneas 57-75), viejo `ticketToEscPos()` (líneas 80-135)
+- **Mantener intacto**: Web Serial connect/disconnect (líneas 151-320), Bluetooth (líneas 203-279), `sendData()`, `printViaSystem()`, estado/preferencias
+
+**La función `printTicket()` (línea 361)** cambiará a usar `buildEscPosBuffer()` en vez de `ticketToEscPos()`.
+
+**`printViaSystem()` (línea 462)** se mantiene como fallback para cuando no hay conexión directa (sigue usando iframe + CSS + QR imagen).
+
+---
+
+### Backend
+
+#### [MODIFY] [ticketService.js](file:///c:/Users/sopes/OneDrive/Escritorio/Cafeteria-EC/backend/src/services/ticketService.js)
+
+**Cambios mínimos** — el backend sigue generando texto plano de 32 columnas. Agregar:
+- Línea de Instagram: `IG: LALANGOSTADECHICAGARCIA` (ya presente)
+- Asegurar que `generateTicket()` y `generatePreTicket()` retornan texto limpio que el frontend puede parsear
+
+> [!NOTE]
+> No movemos la generación ESC/POS al backend porque la conexión USB/BT es browser-to-printer (no pasa por el servidor).
+
+---
+
+### Dependencias
+
+#### [MODIFY] [package.json](file:///c:/Users/sopes/OneDrive/Escritorio/Cafeteria-EC/frontend/package.json)
+
+- Agregar: `@point-of-sale/receipt-printer-encoder` (última versión)
+- Mantener: `qrcode` (usado por `printViaSystem()` fallback)
+
+---
+
+## Flujo de Impresión Resultante
+
+1. **Caja cobra orden** → backend genera `ticketContent` (texto plano 32 cols)
+2. **Frontend recibe texto** → decide ruta:
+   - **Si hay impresora conectada (Serial/BT)**: `printTicket(ticketContent)` → `buildEscPosBuffer(ticketContent)` → buffer ESC/POS con QR nativo → `sendData(buffer)` → impresora directa
+   - **Si no hay conexión directa**: `printViaSystem(ticketContent)` → iframe HTML + CSS + QR imagen → `window.print()` → driver POS de Windows
+
+---
+
+## Verificación
+
+### Pruebas Automatizadas
+- `npm run build` del frontend (sin errores de importación)
+- Verificar que `@point-of-sale/receipt-printer-encoder` se importa correctamente en Vite
+
+### Pruebas Manuales
+- **Test print** desde Settings con impresora POS-58 conectada por USB
+- Verificar: caracteres especiales (ñ, á, é), QR escaneable, alineación, corte
+- Verificar fallback `printViaSystem()` sigue funcionando igual
+
+---
+
+## Riesgos y Mitigaciones
+
+| Riesgo | Mitigación |
+|---|---|
+| POS-58 no soporta QR nativo (GS(k)) | Checar firmware; fallback a QR imagen vía `escpos-encoder` `.image()` |
+| `@point-of-sale/receipt-printer-encoder` no funciona en browser | Verificar que el bundle ESM es compatible con Vite; alternativa: usar `escpos-encoder` original |
+| Codepage CP858 no cubre todos los caracteres | Mantener el mapa manual `textToBytes()` como fallback |
