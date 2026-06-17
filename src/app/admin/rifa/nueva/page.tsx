@@ -453,18 +453,34 @@ function RaffleForm() {
                 {/* Sorteo Lógica */}
                 <div className="space-y-4">
                     <h2 className="text-lg font-bold font-serif text-brand-text border-b border-brand-border pb-2">Lógica del Sorteo Vivo</h2>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         <label className="text-sm font-medium text-brand-muted">Dinámica: ¿En qué giro cae el premio?</label>
-                        <select
-                            name="giro_ganador"
-                            value={formData.giro_ganador}
-                            onChange={handleChange}
-                            className="w-full bg-brand-bg border border-brand-border text-brand-text rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-accent appearance-none"
-                        >
-                            <option value={3}>El 3er papelito/giro se lo lleva (2 eliminados)</option>
-                            <option value={4}>El 4to papelito/giro se lo lleva (3 eliminados)</option>
-                            <option value={5}>El 5to papelito/giro se lo lleva (4 eliminados)</option>
-                        </select>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            {[
+                                { value: 3, label: "3° giro gana", detail: "2 eliminados previos" },
+                                { value: 4, label: "4° giro gana", detail: "3 eliminados previos" },
+                                { value: 5, label: "5° giro gana", detail: "4 eliminados previos" },
+                            ].map((opt) => {
+                                const selected = Number(formData.giro_ganador) === opt.value;
+                                return (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, giro_ganador: String(opt.value) }))}
+                                        className={`
+                                            flex-1 flex flex-col items-center justify-center gap-1 rounded-xl px-4 py-3 border text-sm font-medium transition-all
+                                            ${selected
+                                                ? 'bg-brand-accent/10 border-brand-accent text-brand-accent'
+                                                : 'bg-brand-bg border-brand-border text-brand-muted hover:border-brand-accent/50 hover:text-brand-text'
+                                            }
+                                        `}
+                                    >
+                                        <span className="font-bold text-base">{opt.label}</span>
+                                        <span className="text-xs opacity-70">{opt.detail}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
 
