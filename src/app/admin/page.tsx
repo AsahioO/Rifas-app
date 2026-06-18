@@ -70,12 +70,10 @@ export default function AdminDashboardPage() {
                     <h1 className="text-3xl font-serif font-bold text-brand-text">Resumen de Rifas</h1>
                     <p className="text-brand-muted">Bienvenida al panel de administración.</p>
                 </div>
-                {!activeRaffle && !lastFinished && (
-                    <Link href="/admin/rifa/nueva" className="flex items-center gap-2 bg-brand-accent hover:bg-brand-accent/90 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(200,169,110,0.2)]">
-                        <Plus className="w-5 h-5" />
-                        Crear Nueva Rifa
-                    </Link>
-                )}
+                <Link href="/admin/rifa/nueva" className="flex items-center gap-2 bg-brand-accent hover:bg-brand-accent/90 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(200,169,110,0.2)]">
+                    <Plus className="w-5 h-5" />
+                    Crear Nueva Rifa
+                </Link>
             </div>
 
             {/* Drafts Section */}

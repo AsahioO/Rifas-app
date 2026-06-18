@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, Plus, Ticket, Search, Loader2 } from "lucide-react";
+import { Users, Plus, Ticket, Search, Loader2, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import { mockStore, type Participant, type Raffle } from "@/lib/store";
+import { showToast } from "@/components/ui/Toast";
 
 export default function ParticipantesPage() {
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -11,8 +12,8 @@ export default function ParticipantesPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Form modal state
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
     const [nombre, setNombre] = useState("");
     const [telefono, setTelefono] = useState("");
     const [boletosStr, setBoletosStr] = useState("");
@@ -32,13 +33,36 @@ export default function ParticipantesPage() {
         loadData();
     }, []);
 
+    const openCreateModal = () => {
+        setEditingParticipant(null);
+        setNombre("");
+        setTelefono("");
+        setBoletosStr("");
+        setFormError("");
+        setIsFormOpen(true);
+    };
+
+    const openEditModal = (p: Participant) => {
+        setEditingParticipant(p);
+        setNombre(p.nombre);
+        setTelefono(p.telefono);
+        setBoletosStr(p.boletos.join(", "));
+        setFormError("");
+        setIsFormOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsFormOpen(false);
+        setEditingParticipant(null);
+    };
+
     const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
-            setIsFormOpen(false);
+            closeModal();
         }
     };
 
-    const handleRegister = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormLoading(true);
         setFormError("");
@@ -51,21 +75,33 @@ export default function ParticipantesPage() {
             return;
         }
 
-        // Delay manual mock
         await new Promise(r => setTimeout(r, 600));
 
-        const { error } = await mockStore.registerParticipant(nombre, telefono, numeros);
-
-        setFormLoading(false);
-
-        if (error) {
-            setFormError(error.message);
+        if (editingParticipant) {
+            const { error } = await mockStore.updateParticipant(
+                editingParticipant.id,
+                nombre,
+                telefono,
+                numeros
+            );
+            setFormLoading(false);
+            if (error) {
+                setFormError(error.message);
+            } else {
+                showToast("Participante actualizado correctamente.", "success");
+                closeModal();
+                loadData();
+            }
         } else {
-            setIsFormOpen(false);
-            setNombre("");
-            setTelefono("");
-            setBoletosStr("");
-            loadData(); // refresh list
+            const { error } = await mockStore.registerParticipant(nombre, telefono, numeros);
+            setFormLoading(false);
+            if (error) {
+                setFormError(error.message);
+            } else {
+                showToast("Participante registrado correctamente.", "success");
+                closeModal();
+                loadData();
+            }
         }
     };
 
@@ -87,6 +123,8 @@ export default function ParticipantesPage() {
         );
     }
 
+    const isEditing = editingParticipant !== null;
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* Header */}
@@ -102,7 +140,7 @@ export default function ParticipantesPage() {
                 </div>
                 <motion.button
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsFormOpen(true)}
+                    onClick={openCreateModal}
                     className="flex items-center gap-2 bg-brand-accent hover:bg-brand-accent/90 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-md"
                 >
                     <Plus className="w-5 h-5" />
@@ -136,12 +174,13 @@ export default function ParticipantesPage() {
                                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Boleto(s) Reservados</th>
                                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Estado</th>
                                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Fecha</th>
+                                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs w-20">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-brand-border">
                             {filteredParticipants.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-12 text-center text-brand-muted italic">
+                                    <td colSpan={5} className="px-6 py-12 text-center text-brand-muted italic">
                                         No hay participantes que coincidan con la búsqueda.
                                     </td>
                                 </tr>
@@ -174,6 +213,16 @@ export default function ParticipantesPage() {
                                         <td className="px-6 py-4 text-xs text-brand-muted font-medium">
                                             {new Date(p.created_at).toLocaleDateString()}
                                         </td>
+                                        <td className="px-6 py-4">
+                                            <motion.button
+                                                whileTap={{ scale: 0.9 }}
+                                                onClick={() => openEditModal(p)}
+                                                className="p-2 bg-brand-bg hover:bg-brand-accent/10 text-brand-muted hover:text-brand-accent rounded-lg transition-colors border border-brand-border"
+                                                title="Editar participante"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </motion.button>
+                                        </td>
                                     </motion.tr>
                                 ))
                             )}
@@ -182,7 +231,7 @@ export default function ParticipantesPage() {
                 </div>
             </div>
 
-            {/* Modal de Registro */}
+            {/* Modal de Registro / Edición */}
             {isFormOpen && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4 animate-in fade-in duration-200"
@@ -190,10 +239,16 @@ export default function ParticipantesPage() {
                 >
                     <div className="bg-brand-surface border border-brand-border w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl relative">
                         <div className="p-6 border-b border-brand-border bg-brand-bg/50">
-                            <h2 className="text-xl font-serif font-bold text-brand-text">Registrar Participante</h2>
-                            <p className="text-sm text-brand-muted mt-1">Separa los boletos para un comprador.</p>
+                            <h2 className="text-xl font-serif font-bold text-brand-text">
+                                {isEditing ? "Editar Participante" : "Registrar Participante"}
+                            </h2>
+                            <p className="text-sm text-brand-muted mt-1">
+                                {isEditing
+                                    ? "Modifica los datos y boletos del participante."
+                                    : "Separa los boletos para un comprador."}
+                            </p>
                         </div>
-                        <form onSubmit={handleRegister} className="p-6 space-y-6">
+                        <form onSubmit={handleSubmit} className="p-6 space-y-6">
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-brand-text">Nombre Completo</label>
@@ -241,7 +296,7 @@ export default function ParticipantesPage() {
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     type="button"
-                                    onClick={() => setIsFormOpen(false)}
+                                    onClick={closeModal}
                                     className="px-5 py-2.5 rounded-lg text-sm font-medium text-brand-muted hover:bg-brand-bg hover:text-brand-text transition-colors"
                                 >
                                     Cancelar
@@ -253,7 +308,7 @@ export default function ParticipantesPage() {
                                     className="bg-brand-accent hover:bg-brand-accent/90 text-white text-sm font-bold px-6 py-2.5 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50 shadow-sm"
                                 >
                                     {formLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    Apartar Boletos
+                                    {isEditing ? "Guardar Cambios" : "Apartar Boletos"}
                                 </motion.button>
                             </div>
                         </form>

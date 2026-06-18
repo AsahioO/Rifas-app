@@ -252,6 +252,69 @@ class Store {
         return { data: newParticipant as Participant, error: null };
     }
 
+    async updateParticipant(id: string, nombre: string, telefono: string, boletos: number[]): Promise<{ data: Participant | null, error: Error | null }> {
+        const deduped = Array.from(new Set(boletos)).sort((a, b) => a - b);
+        if (deduped.length !== boletos.length) {
+            return { data: null, error: new Error("Hay números duplicados en la selección.") };
+        }
+
+        if (deduped.length === 0) {
+            return { data: null, error: new Error("Debe seleccionar al menos un número.") };
+        }
+
+        const { data: existing, error: fetchError } = await supabase
+            .from('participantes')
+            .select('*')
+            .eq('id', id)
+            .maybeSingle();
+
+        if (fetchError || !existing) {
+            return { data: null, error: new Error("Participante no encontrado.") };
+        }
+
+        const rifaId = existing.rifa_id as string;
+        const { data: raffle } = await supabase
+            .from('rifas')
+            .select('total_boletos')
+            .eq('id', rifaId)
+            .maybeSingle();
+
+        if (raffle) {
+            const maxBoleto = Number(raffle.total_boletos);
+            const fueraDeRango = deduped.filter(b => b < 1 || b > maxBoleto);
+            if (fueraDeRango.length > 0) {
+                return { data: null, error: new Error(`Los boletos ${fueraDeRango.join(', ')} están fuera del rango (1-${maxBoleto}).`) };
+            }
+        }
+
+        const { data: others } = await supabase
+            .from('participantes')
+            .select('id, boletos')
+            .eq('rifa_id', rifaId)
+            .neq('id', id);
+
+        const takenByOthers: number[] = [];
+        (others || []).forEach((p: { id: string; boletos: number[] }) => {
+            p.boletos.forEach((b: number) => {
+                if (deduped.includes(b)) takenByOthers.push(b);
+            });
+        });
+
+        if (takenByOthers.length > 0) {
+            return { data: null, error: new Error(`Los boletos ${Array.from(new Set(takenByOthers)).join(', ')} ya pertenecen a otro participante.`) };
+        }
+
+        const { data: updated, error: updateError } = await supabase
+            .from('participantes')
+            .update({ nombre, telefono, boletos: deduped })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (updateError) return { data: null, error: new Error(updateError.message) };
+        return { data: updated as Participant, error: null };
+    }
+
     async finalizeRaffle(ganador_boleto: number, ganador_nombre: string): Promise<{ data: Raffle | null, error: Error | null }> {
         const activeRaffle = await this.getActiveRaffle();
         if (!activeRaffle) return { data: null, error: new Error("No hay rifa activa.") };
