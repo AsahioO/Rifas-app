@@ -1,12 +1,14 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LayoutDashboard, Ticket, Users, History, Settings, LogOut, DollarSign } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const router = useRouter();
 
     const navigation = [
@@ -24,8 +26,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     const isLoginPage = pathname === "/admin/login";
+    const isLiveMode = pathname === "/admin/sorteo" && searchParams.get("live") === "1";
 
     if (isLoginPage) {
+        return <div className="min-h-screen bg-brand-bg">{children}</div>;
+    }
+
+    if (isLiveMode) {
         return <div className="min-h-screen bg-brand-bg">{children}</div>;
     }
 
@@ -119,5 +126,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
             </main>
         </div>
+    );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-brand-bg" />}>
+            <AdminLayoutInner>{children}</AdminLayoutInner>
+        </Suspense>
     );
 }

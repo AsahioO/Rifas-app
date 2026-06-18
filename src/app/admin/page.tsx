@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, Users, Ticket, ArrowRight, Activity, Plus, Edit, Trash2 } from "lucide-react";
+import { Trophy, Users, Ticket, ArrowRight, Activity, Plus, Edit, Trash2, Play } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { mockStore, type Raffle, type Participant } from "@/lib/store";
@@ -100,6 +100,12 @@ export default function AdminDashboardPage() {
                                         className="flex-1 bg-brand-bg hover:bg-brand-accent/5 text-brand-text px-4 py-2 rounded-xl text-sm font-medium transition-colors border border-brand-border text-center flex items-center justify-center gap-2"
                                     >
                                         <Edit className="w-4 h-4" /> Editar
+                                    </Link>
+                                    <Link
+                                        href={`/admin/participantes?rifa=${draft.id}`}
+                                        className="flex-1 bg-brand-bg hover:bg-brand-accent/5 text-brand-text px-4 py-2 rounded-xl text-sm font-medium transition-colors border border-brand-border text-center flex items-center justify-center gap-2"
+                                    >
+                                        <Users className="w-4 h-4" /> Participantes
                                     </Link>
                                     <motion.button
                                         whileTap={{ scale: 0.95 }}
@@ -293,9 +299,15 @@ export default function AdminDashboardPage() {
                                         Cuando vendas todos los boletos, podrás iniciar la ruleta desde aquí.
                                     </p>
                                 </div>
-                                <Link href="/admin/sorteo" className="z-10 bg-brand-bg border border-brand-border text-brand-text px-8 py-3 rounded-full font-medium transition-colors hover:bg-brand-border hover:shadow-sm">
-                                    Ir al Panel de Sorteo
-                                </Link>
+                                <div className="z-10 flex flex-col sm:flex-row gap-3">
+                                    <Link href="/admin/sorteo" className="bg-brand-bg border border-brand-border text-brand-text px-8 py-3 rounded-full font-medium transition-colors hover:bg-brand-border hover:shadow-sm">
+                                        Ir al Panel de Sorteo
+                                    </Link>
+                                    <Link href="/admin/sorteo?live=1" className="bg-brand-accent/10 border border-brand-accent/30 text-brand-accent px-8 py-3 rounded-full font-bold transition-colors hover:bg-brand-accent/20 hover:shadow-sm flex items-center justify-center gap-2">
+                                        <Play className="w-4 h-4" />
+                                        Abrir Modo Live
+                                    </Link>
+                                </div>
                             </div>
                         ) : null}
                     </div>

@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Users, Plus, Ticket, Search, Loader2, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
 import { mockStore, type Participant, type Raffle } from "@/lib/store";
 import { showToast } from "@/components/ui/Toast";
 
-export default function ParticipantesPage() {
+function ParticipantesContent() {
+    const searchParams = useSearchParams();
+    const raffleIdParam = searchParams.get("rifa");
+
     const [participants, setParticipants] = useState<Participant[]>([]);
     const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null);
     const [loading, setLoading] = useState(true);
@@ -20,18 +24,28 @@ export default function ParticipantesPage() {
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState("");
 
-    const loadData = async () => {
-        const raffle = await mockStore.getActiveRaffle();
+    const loadData = useCallback(async () => {
+        let raffle: Raffle | null = null;
+
+        if (raffleIdParam) {
+            raffle = await mockStore.getRaffleById(raffleIdParam);
+        } else {
+            raffle = await mockStore.getActiveRaffle();
+        }
+
         setActiveRaffle(raffle);
+
         if (raffle) {
             setParticipants(await mockStore.getParticipants(raffle.id));
         }
+
         setLoading(false);
-    };
+    }, [raffleIdParam]);
 
     useEffect(() => {
+        setLoading(true);
         loadData();
-    }, []);
+    }, [loadData]);
 
     const openCreateModal = () => {
         setEditingParticipant(null);
@@ -93,7 +107,12 @@ export default function ParticipantesPage() {
                 loadData();
             }
         } else {
-            const { error } = await mockStore.registerParticipant(nombre, telefono, numeros);
+            const { error } = await mockStore.registerParticipant(
+                nombre,
+                telefono,
+                numeros,
+                activeRaffle?.id
+            );
             setFormLoading(false);
             if (error) {
                 setFormError(error.message);
@@ -117,12 +136,19 @@ export default function ParticipantesPage() {
         return (
             <div className="bg-brand-surface border-brand-border border-dashed border-2 px-6 py-16 rounded-3xl text-center space-y-4 shadow-sm">
                 <Users className="w-12 h-12 text-brand-muted mx-auto" />
-                <h3 className="text-2xl font-serif font-bold text-brand-text">No hay rifa activa</h3>
-                <p className="text-brand-muted">Debes crear una rifa para poder registrar participantes.</p>
+                <h3 className="text-2xl font-serif font-bold text-brand-text">
+                    {raffleIdParam ? "Rifa no encontrada" : "No hay rifa activa"}
+                </h3>
+                <p className="text-brand-muted">
+                    {raffleIdParam
+                        ? "La rifa solicitada no existe o fue eliminada."
+                        : "Debes crear una rifa para poder registrar participantes."}
+                </p>
             </div>
         );
     }
 
+    const isFinalized = activeRaffle.estado === 'finalizada' || activeRaffle.estado === 'archivada';
     const isEditing = editingParticipant !== null;
 
     return (
@@ -134,18 +160,30 @@ export default function ParticipantesPage() {
                         <Users className="w-8 h-8 text-brand-accent" />
                         Participantes
                     </h1>
-                    <p className="text-brand-muted mt-1">
-                        Gestiona los boletos de la rifa: <span className="text-brand-text font-medium">{activeRaffle.nombre}</span>
+                    <p className="text-brand-muted mt-1 flex items-center gap-2 flex-wrap">
+                        Gestiona los boletos de la rifa:
+                        <span className="text-brand-text font-medium">{activeRaffle.nombre}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase border ${
+                            activeRaffle.estado === 'activa'
+                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                : activeRaffle.estado === 'borrador'
+                                ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                : 'bg-zinc-100 text-zinc-500 border-zinc-200'
+                        }`}>
+                            {activeRaffle.estado}
+                        </span>
                     </p>
                 </div>
-                <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={openCreateModal}
-                    className="flex items-center gap-2 bg-brand-accent hover:bg-brand-accent/90 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-md"
-                >
-                    <Plus className="w-5 h-5" />
-                    Nuevo Registro
-                </motion.button>
+                {!isFinalized && (
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={openCreateModal}
+                        className="flex items-center gap-2 bg-brand-accent hover:bg-brand-accent/90 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-md"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Nuevo Registro
+                    </motion.button>
+                )}
             </div>
 
             {/* List & Filtering */}
@@ -316,5 +354,13 @@ export default function ParticipantesPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ParticipantesPage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center animate-pulse">Cargando participantes...</div>}>
+            <ParticipantesContent />
+        </Suspense>
     );
 }

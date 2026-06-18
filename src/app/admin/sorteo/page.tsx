@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Trophy, ArrowLeft, Loader2, PartyPopper } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import confetti from "canvas-confetti";
 import { mockStore, type Raffle, type Participant } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -23,6 +24,10 @@ export default function SorteoPage() {
     const [rotation, setRotation] = useState(0);
     const [isResetting, setIsResetting] = useState(false);
     const [spunCard, setSpunCard] = useState<{ boleto: number, nombre: string } | null>(null);
+
+    // Live mode detection
+    const searchParams = useSearchParams();
+    const isLiveMode = searchParams.get("live") === "1";
 
     // Realtime Broadcast channel
     const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -103,6 +108,21 @@ export default function SorteoPage() {
 
     const sliceDetails = getSliceDetails();
     const N = sliceDetails.length;
+
+    const confettiParticles = useMemo(() => {
+        if (!winner) return [];
+        const colors = ['#c8a96e', '#e07a5f', '#81b29a', '#f2cc8f', '#e07a5f', '#c8a96e', '#f4a261', '#e9c46a'];
+        return Array.from({ length: 40 }, (_, i) => ({
+            id: i,
+            left: Math.random() * 100,
+            delay: Math.random() * 2.5,
+            duration: 2 + Math.random() * 3,
+            size: 4 + Math.random() * 7,
+            color: colors[i % colors.length],
+            rotation: Math.random() * 360,
+            drift: (Math.random() - 0.5) * 60,
+        }));
+    }, [winner]);
 
     const allTakenTickets = participants.flatMap(p => p.boletos);
     const canDraw = allTakenTickets.length > 0;
@@ -208,18 +228,22 @@ export default function SorteoPage() {
             <div className="bg-brand-surface border-brand-border border-dashed border-2 px-6 py-16 rounded-3xl text-center space-y-4 max-w-2xl mx-auto shadow-sm">
                 <Trophy className="w-12 h-12 text-brand-muted mx-auto" />
                 <h3 className="text-2xl font-serif font-bold text-brand-text">No hay rifa activa para sortear</h3>
+                {!isLiveMode && (
                 <Link href="/admin" className="text-brand-accent hover:underline inline-block mt-4 font-medium">Volver al Inicio</Link>
+                )}
             </div>
         );
     }
 
     return (
-        <div className="min-h-[80vh] flex flex-col pt-8 animate-in fade-in duration-500 overflow-hidden">
+        <div className={`${isLiveMode ? 'min-h-screen items-center justify-center p-4' : 'min-h-[80vh] pt-8'} flex flex-col animate-in fade-in duration-500 overflow-hidden`}>
             {/* Header */}
-            <div className="flex items-center gap-4 mb-8">
-                <Link href="/admin" className="p-2 text-brand-muted hover:text-brand-accent hover:bg-brand-accent/5 rounded-full transition-colors z-10 relative">
-                    <ArrowLeft className="w-5 h-5" />
-                </Link>
+            <div className={`flex items-center gap-4 mb-8 ${isLiveMode ? 'justify-center' : ''}`}>
+                {!isLiveMode && (
+                    <Link href="/admin" className="p-2 text-brand-muted hover:text-brand-accent hover:bg-brand-accent/5 rounded-full transition-colors z-10 relative">
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                )}
                 <div className="z-10 relative">
                     <h1 className="text-2xl md:text-3xl font-serif font-bold text-brand-text flex items-center gap-2">
                         Ruleta del Sorteo
@@ -242,8 +266,8 @@ export default function SorteoPage() {
                 <div className="flex-1 flex flex-col lg:flex-row gap-8 items-center justify-center relative w-full max-w-6xl mx-auto z-10 pb-8">
 
                     {/* Left: Roulette Machine */}
-                    <div className="flex-1 w-full max-w-xl flex flex-col items-center justify-center">
-                        <div className="relative group perspective-1000 w-[95%] sm:w-full max-w-[320px] sm:max-w-md aspect-square mx-auto mt-4 sm:my-8 text-black">
+                    <div className={`flex-1 w-full ${isLiveMode ? 'max-w-3xl' : 'max-w-xl'} flex flex-col items-center justify-center`}>
+                        <div className={`relative group perspective-1000 w-[95%] sm:w-full ${isLiveMode ? 'max-w-[380px] sm:max-w-xl' : 'max-w-[320px] sm:max-w-md'} aspect-square mx-auto mt-4 sm:my-8 text-black`}>
 
                             {/* Glow behind */}
                             <div className={`absolute inset-0 rounded-full blur-[80px] transition-all duration-1000 
@@ -325,11 +349,44 @@ export default function SorteoPage() {
                             )}
 
                             {winner && (
-                                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-brand-surface/95 backdrop-blur-md rounded-full animate-in zoom-in duration-700 shadow-2xl">
-                                    <PartyPopper className="w-12 h-12 sm:w-16 sm:h-16 text-brand-accent mb-2 sm:mb-4 animate-bounce" />
-                                    <h3 className="text-brand-accent font-bold text-4xl sm:text-5xl font-serif uppercase drop-shadow-[0_0_15px_rgba(200,169,110,0.5)]">¡GANADOR!</h3>
-                                    <p className="text-brand-text text-5xl sm:text-6xl font-bold mt-2 font-serif drop-shadow-sm">#{winner.boleto}</p>
-                                    <p className="text-brand-muted text-lg sm:text-2xl mt-4 truncate px-8 w-full text-center" title={winner.nombre}>{winner.nombre}</p>
+                                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-brand-surface/95 backdrop-blur-md rounded-full animate-in zoom-in duration-700 shadow-2xl overflow-hidden">
+                                    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-full">
+                                        {confettiParticles.map((p) => (
+                                            <span
+                                                key={p.id}
+                                                className="absolute rounded-sm will-change-transform"
+                                                style={{
+                                                    left: `${p.left}%`,
+                                                    top: '-6%',
+                                                    width: `${p.size * 0.5}px`,
+                                                    height: `${p.size}px`,
+                                                    backgroundColor: p.color,
+                                                    animation: `confettiFall ${p.duration}s ease-in ${p.delay}s both`,
+                                                    '--drift': `${p.drift}px`,
+                                                    transform: `rotate(${p.rotation}deg)`,
+                                                } as React.CSSProperties}
+                                            />
+                                        ))}
+                                    </div>
+                                    <PartyPopper className="w-12 h-12 sm:w-16 sm:h-16 text-brand-accent mb-2 sm:mb-4 animate-bounce relative z-10" />
+                                    <h3 className="text-brand-accent font-bold text-4xl sm:text-5xl font-serif uppercase drop-shadow-[0_0_15px_rgba(200,169,110,0.5)] relative z-10">¡GANADOR!</h3>
+                                    <p className="text-brand-text text-5xl sm:text-6xl font-bold mt-2 font-serif drop-shadow-sm relative z-10">#{winner.boleto}</p>
+                                    <p className="text-brand-muted text-lg sm:text-2xl mt-4 truncate px-8 w-full text-center relative z-10" title={winner.nombre}>{winner.nombre}</p>
+                                    <style jsx>{`
+                                        @keyframes confettiFall {
+                                            0% {
+                                                transform: translateY(0) translateX(0) rotate(0deg);
+                                                opacity: 1;
+                                            }
+                                            75% {
+                                                opacity: 0.8;
+                                            }
+                                            100% {
+                                                transform: translateY(320px) translateX(var(--drift, 20px)) rotate(720deg);
+                                                opacity: 0;
+                                            }
+                                        }
+                                    `}</style>
                                 </div>
                             )}
 
@@ -363,15 +420,18 @@ export default function SorteoPage() {
                             ) : (
                                 <div className="text-center space-y-4 relative z-40 w-full max-w-sm mx-auto">
                                     <p className="text-brand-accent font-bold text-lg border-b border-brand-border pb-2">Sorteo Finalizado Exitosamente</p>
+                                    {!isLiveMode && (
                                     <Link href="/admin" className="px-8 py-4 bg-white hover:bg-zinc-50 border border-brand-border rounded-full font-bold transition-all inline-block hover:-translate-y-1 mt-4 text-brand-text shadow-sm w-full">
                                         Volver al Dashboard
                                     </Link>
+                                    )}
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* Right: History / Summary */}
+                    {!isLiveMode && (
                     <div className="w-full lg:max-w-sm bg-brand-surface p-6 sm:p-8 rounded-3xl h-[400px] sm:h-[600px] flex flex-col border border-brand-border shadow-md relative z-20">
                         <div className="flex items-center justify-between border-b border-brand-border pb-4 mb-6">
                             <h3 className="font-serif font-bold text-xl text-brand-text">
@@ -420,6 +480,7 @@ export default function SorteoPage() {
                             )}
                         </div>
                     </div>
+                    )}
                 </div>
             )}
         </div>

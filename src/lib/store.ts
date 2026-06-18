@@ -223,13 +223,30 @@ class Store {
         return { data: data as Raffle, error: null };
     }
 
-    async registerParticipant(nombre: string, telefono: string, boletos: number[]): Promise<{ data: Participant | null, error: Error | null }> {
-        const activeRaffle = await this.getActiveRaffle();
-        if (!activeRaffle) {
-            return { data: null, error: new Error("No hay rifa activa para registrar participantes.") };
+    async registerParticipant(nombre: string, telefono: string, boletos: number[], raffleId?: string): Promise<{ data: Participant | null, error: Error | null }> {
+        let targetRaffle: Raffle | null = null;
+
+        if (raffleId) {
+            targetRaffle = await this.getRaffleById(raffleId);
+        } else {
+            targetRaffle = await this.getActiveRaffle();
         }
 
-        const taken = await this.getTakenTickets(activeRaffle.id);
+        if (!targetRaffle) {
+            return { data: null, error: new Error(raffleId ? "La rifa especificada no existe." : "No hay rifa activa para registrar participantes.") };
+        }
+
+        if (targetRaffle.estado !== 'activa' && targetRaffle.estado !== 'borrador') {
+            return { data: null, error: new Error(`No se pueden registrar participantes en una rifa en estado "${targetRaffle.estado}".`) };
+        }
+
+        const maxBoleto = targetRaffle.total_boletos;
+        const fueraDeRango = boletos.filter(b => b < 1 || b > maxBoleto);
+        if (fueraDeRango.length > 0) {
+            return { data: null, error: new Error(`Los boletos ${fueraDeRango.join(', ')} están fuera del rango (1-${maxBoleto}).`) };
+        }
+
+        const taken = await this.getTakenTickets(targetRaffle.id);
         const conflicts = boletos.filter(b => taken.includes(b));
 
         if (conflicts.length > 0) {
@@ -239,7 +256,7 @@ class Store {
         const { data: newParticipant, error } = await supabase
             .from('participantes')
             .insert([{
-                rifa_id: activeRaffle.id,
+                rifa_id: targetRaffle.id,
                 nombre,
                 telefono,
                 boletos,
