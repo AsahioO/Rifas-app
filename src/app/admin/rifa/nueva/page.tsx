@@ -22,6 +22,7 @@ function RaffleForm() {
         nombre: "",
         descripcion: "",
         regalo_incluido: "",
+        premio_consolacion: "",
         precio_boleto: "20",
         total_boletos: "100",
         giro_ganador: "5",
@@ -48,6 +49,7 @@ function RaffleForm() {
                         nombre: draft.nombre,
                         descripcion: draft.descripcion,
                         regalo_incluido: draft.regalo_incluido || "",
+                        premio_consolacion: draft.premio_consolacion || "",
                         precio_boleto: draft.precio_boleto.toString(),
                         total_boletos: draft.total_boletos.toString(),
                         giro_ganador: draft.giro_ganador.toString(),
@@ -185,6 +187,8 @@ function RaffleForm() {
             fotos: imageUrls,
             ...(giftImageUrls.length > 0 ? { fotos_regalo: giftImageUrls } : {})
         } as Partial<Raffle> & { estado?: 'activa' | 'borrador' };
+
+        payload.premio_consolacion = formData.premio_consolacion.trim() || null;
 
         if (!payload.regalo_incluido || payload.regalo_incluido.trim() === "") {
             // Send empty string if cleared, so DB unsets it
@@ -492,6 +496,23 @@ function RaffleForm() {
                             })}
                         </div>
                     </div>
+                </div>
+
+                {/* Premio de Consolación */}
+                <div className="space-y-4">
+                  <h2 className="text-lg font-bold font-serif text-brand-text border-b border-brand-border pb-2">Regalo sorpresa</h2>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-brand-muted">Premio de consolación para boletos no ganadores <span className="text-brand-muted/70 text-xs">(Opcional)</span></label>
+                    <input
+                      name="premio_consolacion"
+                      value={formData.premio_consolacion}
+                      onChange={handleChange}
+                      maxLength={80}
+                      className="w-full bg-brand-bg border border-brand-accent/30 text-brand-text rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-accent transition-colors placeholder:text-brand-muted/50"
+                      placeholder="Ej: Regalo sorpresa"
+                    />
+                    <p className="text-xs text-brand-accent">Se mostrará en modo live cuando salga un boleto antes del ganador principal.</p>
+                  </div>
                 </div>
 
                 {error && (

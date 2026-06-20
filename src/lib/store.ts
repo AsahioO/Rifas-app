@@ -5,6 +5,7 @@ export type Raffle = {
     nombre: string;
     descripcion: string;
     regalo_incluido?: string;
+    premio_consolacion?: string | null;
     fotos: string[];
     fotos_regalo?: string[];
     precio_boleto: number;

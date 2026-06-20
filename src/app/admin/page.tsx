@@ -76,7 +76,8 @@ export default function AdminDashboardPage() {
 
     const handleEditSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        await mockStore.updateActiveRaffle(editData);
+        const updates = { ...editData, premio_consolacion: (editData.premio_consolacion as string)?.trim() || null };
+        await mockStore.updateActiveRaffle(updates);
         setShowEdit(false);
         fetchStats();
     };
@@ -258,7 +259,7 @@ export default function AdminDashboardPage() {
                                 </h3>
                                 {activeRaffle.estado === 'activa' && (
                                     <div className="flex items-center gap-2">
-                                        <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setEditData(activeRaffle); setShowEdit(true); }} className="p-2 bg-brand-bg hover:bg-brand-border rounded-lg text-brand-muted hover:text-brand-text transition-colors" title="Editar Rifa" aria-label="Editar rifa activa">
+                                        <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setEditData({ ...activeRaffle, premio_consolacion: activeRaffle.premio_consolacion || "" }); setShowEdit(true); }} className="p-2 bg-brand-bg hover:bg-brand-border rounded-lg text-brand-muted hover:text-brand-text transition-colors" title="Editar Rifa" aria-label="Editar rifa activa">
                                             <Edit className="w-4 h-4" />
                                         </motion.button>
                                         <motion.button whileTap={{ scale: 0.9 }} onClick={handleDeactivate} className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-600 hover:text-amber-700 rounded-lg transition-colors" title="Desactivar Rifa" aria-label="Desactivar rifa activa">
@@ -401,6 +402,17 @@ export default function AdminDashboardPage() {
                                 onChange={(value) => setEditData({ ...editData, fecha_sorteo: dateTimeLocalToIso(value) })}
                                 description="Ajusta el anuncio y contador de la página principal."
                             />
+                            <div>
+                              <label className="text-sm text-brand-muted">Regalo sorpresa para no ganadores <span className="text-brand-muted/70 text-xs">(Opcional)</span></label>
+                              <input
+                                type="text"
+                                value={(editData.premio_consolacion as string) || ""}
+                                onChange={e => setEditData({ ...editData, premio_consolacion: e.target.value })}
+                                className="w-full bg-brand-bg border border-brand-border rounded-xl p-3 outline-none focus:border-brand-accent transition-colors text-brand-text mt-1"
+                                placeholder="Ej: Regalo sorpresa"
+                                maxLength={80}
+                              />
+                            </div>
                             <div className="flex gap-4 pt-4">
                                 <button type="button" onClick={() => setShowEdit(false)} className="flex-1 py-3 px-4 rounded-xl border border-brand-border hover:bg-brand-bg text-brand-text transition-colors">Cancelar</button>
                                 <button type="submit" className="flex-1 py-3 px-4 rounded-xl bg-brand-accent text-white font-bold hover:bg-brand-accent/90 transition-colors shadow-sm">Guardar</button>

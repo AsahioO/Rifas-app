@@ -25,6 +25,7 @@ export default function LandingPage() {
   const [liveSlices, setLiveSlices] = useState<LiveSlice[]>([]);
   const [liveEliminated, setLiveEliminated] = useState<{ boleto: number; nombre: string; intento: number }[]>([]);
   const [liveWinner, setLiveWinner] = useState<{ boleto: number; nombre: string } | null>(null);
+  const [liveConsolationPrize, setLiveConsolationPrize] = useState<string | null>(null);
   const [liveIsResetting, setLiveIsResetting] = useState(false);
   const [liveSpunCard, setLiveSpunCard] = useState<{ boleto: number; nombre: string } | null>(null);
   const [liveAttempt, setLiveAttempt] = useState(1);
@@ -101,6 +102,7 @@ export default function LandingPage() {
         setLiveAttempt(intento);
         setLiveTotalAttempts(totalIntentos);
         if (intento === 1) setLiveEliminated([]);
+        setLiveConsolationPrize(payload.premioConsolacion ? String(payload.premioConsolacion) : null);
         setLiveSlices(payload.slices as LiveSlice[]);
         setLiveRotation(payload.rotation as number);
         setTimeout(() => {
@@ -130,6 +132,7 @@ export default function LandingPage() {
       if (evento === 'ganador') {
         setLiveWinner({ boleto: payload.boleto as number, nombre: payload.nombre as string });
         setLiveSpunCard(null);
+        setLiveConsolationPrize(null);
         const duration = 5 * 1000;
         const animationEnd = Date.now() + duration;
         const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
@@ -433,6 +436,7 @@ export default function LandingPage() {
                         totalAttempts={liveTotalAttempts}
                         showNames={true}
                         centerLabel="LIVE"
+                        consolationPrize={liveConsolationPrize}
                         className="mx-auto w-full max-w-[440px] sm:max-w-[560px]"
                       />
                     </div>

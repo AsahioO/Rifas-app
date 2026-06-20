@@ -23,6 +23,7 @@ type RaffleWheelProps = {
   showNames?: boolean;
   centerLabel?: string;
   className?: string;
+  consolationPrize?: string | null;
 };
 
 const WHEEL_COLORS = [
@@ -96,6 +97,7 @@ export function RaffleWheel({
   isDrawing = false,
   showNames = true,
   centerLabel = "RIFA",
+  consolationPrize = null,
   className,
 }: RaffleWheelProps) {
   const total = slices.length;
@@ -103,7 +105,7 @@ export function RaffleWheel({
   const ariaLabel = winner
     ? `Ganador del sorteo: boleto ${winner.boleto}, ${winner.nombre}`
     : result
-      ? `Boleto eliminado: ${result.boleto}, ${result.nombre}`
+      ? `Boleto no ganador: ${result.boleto}, ${result.nombre}${consolationPrize ? `. Regalo sorpresa: ${consolationPrize}` : ''}`
       : `Ruleta del sorteo con ${total} boletos en juego`;
 
   return (
@@ -234,9 +236,14 @@ export function RaffleWheel({
       {result && !winner && (
         <div className="absolute inset-[8%] z-50 flex items-center justify-center rounded-full border-[5px] border-[#8a2f2f] bg-[#fbf6ea]/95 p-6 text-center text-[#21170f] shadow-[0_18px_45px_rgba(0,0,0,0.3)] animate-in zoom-in duration-300">
           <div className="max-w-[80%]">
-            <p className="text-[10px] font-black uppercase tracking-[0.34em] text-[#8a2f2f] sm:text-xs">Eliminado</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.34em] text-[#8a2f2f] sm:text-xs">No ganador</p>
             <p className="mt-2 font-serif text-4xl font-black tabular-nums text-[#21170f] sm:text-6xl">{result.boleto}</p>
             <p className="mt-2 truncate text-sm font-bold text-[#5f5141] sm:text-xl" title={result.nombre}>{result.nombre}</p>
+            {consolationPrize && (
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#8a6f3f] sm:text-xs truncate">
+                🎁 Regalo sorpresa: {consolationPrize}
+              </p>
+            )}
             <AttemptText currentAttempt={currentAttempt} totalAttempts={totalAttempts} />
           </div>
         </div>

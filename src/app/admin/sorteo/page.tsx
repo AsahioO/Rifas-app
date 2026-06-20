@@ -152,6 +152,7 @@ export default function SorteoPage() {
             slices: sliceDetails.map(s => ({ boleto: s.boleto, nombre: s.nombre })),
             intento: currentIntento,
             totalIntentos: activeRaffle.giro_ganador,
+            premioConsolacion: activeRaffle.premio_consolacion?.trim() || null,
         });
 
         setTimeout(() => {
@@ -286,6 +287,7 @@ export default function SorteoPage() {
                             isDrawing={isDrawing}
                             showNames={true}
                             centerLabel={isLiveMode ? "LIVE" : "RIFA"}
+                            consolationPrize={activeRaffle?.premio_consolacion}
                             className={`w-[92%] sm:w-full ${isLiveMode ? 'max-w-[420px] sm:max-w-[620px]' : 'max-w-[340px] sm:max-w-md'} mx-auto mt-4 sm:my-8`}
                         />
 
