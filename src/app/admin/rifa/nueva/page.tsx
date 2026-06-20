@@ -6,6 +6,8 @@ import { ArrowLeft, Image as ImageIcon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { mockStore, type Raffle } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
+import { dateTimeLocalToIso, isoToDateTimeLocal } from "@/lib/datetime";
+import { SchedulePicker } from "@/components/SchedulePicker";
 
 function RaffleForm() {
     const router = useRouter();
@@ -23,6 +25,7 @@ function RaffleForm() {
         precio_boleto: "20",
         total_boletos: "100",
         giro_ganador: "5",
+        fecha_sorteo: "",
     });
     const [valorProducto, setValorProducto] = useState<string>("");
     const [submitTo, setSubmitTo] = useState<'activa' | 'borrador'>('activa');
@@ -48,6 +51,7 @@ function RaffleForm() {
                         precio_boleto: draft.precio_boleto.toString(),
                         total_boletos: draft.total_boletos.toString(),
                         giro_ganador: draft.giro_ganador.toString(),
+                        fecha_sorteo: isoToDateTimeLocal(draft.fecha_sorteo),
                     });
                     if (draft.fotos && draft.fotos.length > 0) {
                         setExistingImageUrls(draft.fotos);
@@ -170,13 +174,14 @@ function RaffleForm() {
             }
         }
 
-        const { precio_boleto, total_boletos, giro_ganador, ...rest } = formData;
+        const { precio_boleto, total_boletos, giro_ganador, fecha_sorteo, ...rest } = formData;
 
         const payload = {
             ...rest,
             precio_boleto: Number(precio_boleto),
             total_boletos: Number(total_boletos),
             giro_ganador: Number(giro_ganador),
+            fecha_sorteo: dateTimeLocalToIso(fecha_sorteo),
             fotos: imageUrls,
             ...(giftImageUrls.length > 0 ? { fotos_regalo: giftImageUrls } : {})
         } as Partial<Raffle> & { estado?: 'activa' | 'borrador' };
@@ -453,6 +458,11 @@ function RaffleForm() {
                 {/* Sorteo Lógica */}
                 <div className="space-y-4">
                     <h2 className="text-lg font-bold font-serif text-brand-text border-b border-brand-border pb-2">Lógica del Sorteo Vivo</h2>
+                    <SchedulePicker
+                        value={formData.fecha_sorteo}
+                        onChange={(fecha_sorteo) => setFormData(prev => ({ ...prev, fecha_sorteo }))}
+                    />
+
                     <div className="space-y-3">
                         <label className="text-sm font-medium text-brand-muted">Dinámica: ¿En qué giro cae el premio?</label>
                         <div className="flex flex-col sm:flex-row gap-2">

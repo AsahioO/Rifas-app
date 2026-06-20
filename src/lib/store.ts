@@ -10,6 +10,7 @@ export type Raffle = {
     precio_boleto: number;
     total_boletos: number;
     giro_ganador: number; // 3, 4 or 5
+    fecha_sorteo?: string | null;
     estado: 'activa' | 'finalizada' | 'archivada' | 'borrador';
     created_at: string;
     ganador_boleto?: number;

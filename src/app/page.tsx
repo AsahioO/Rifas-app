@@ -5,6 +5,7 @@ import { Ticket as TicketIcon, Clock, Trophy, PartyPopper, ChevronLeft, ChevronR
 import { mockStore, type Raffle, type Participant } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { RaffleWheel } from "@/components/RaffleWheel";
+import { getCountdownDetails } from "@/lib/datetime";
 
 export default function LandingPage() {
   const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null);
@@ -13,7 +14,9 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [lastFinished, setLastFinished] = useState<Raffle | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
   const confettiFired = useRef(false);
+  const scheduledRaffleDate = activeRaffle?.fecha_sorteo ?? null;
 
   // ===== REALTIME ROULETTE STATE =====
   type LiveSlice = { boleto: number; nombre: string };
@@ -39,6 +42,14 @@ export default function LandingPage() {
 
   const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % activeRaffle!.fotos.length);
   const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + activeRaffle!.fotos.length) % activeRaffle!.fotos.length);
+
+  useEffect(() => {
+    if (!scheduledRaffleDate) return;
+
+    setNow(Date.now());
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [scheduledRaffleDate]);
 
   const fireConfetti = useCallback(async () => {
     const confetti = (await import("canvas-confetti")).default;
@@ -140,6 +151,8 @@ export default function LandingPage() {
     };
   }, [fireConfetti]);
 
+  const countdown = getCountdownDetails(scheduledRaffleDate, now);
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* HEADER */}
@@ -152,7 +165,7 @@ export default function LandingPage() {
         </div>
         <a
           href="/admin/login"
-          className="text-sm font-medium text-brand-muted hover:text-brand-text transition-colors"
+          className="text-sm font-medium text-brand-muted/20 opacity-20 transition-[color,opacity] hover:text-brand-muted/80 hover:opacity-100 focus-visible:text-brand-text focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent/40 focus-visible:ring-offset-2 rounded-md px-1"
         >
           Iniciar Sesión
         </a>
@@ -212,8 +225,42 @@ export default function LandingPage() {
           </div>
         ) : (
           <>
+            {countdown && (
+              <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-12">
+                <div className="relative overflow-hidden rounded-[2rem] border border-brand-accent/25 bg-brand-surface/95 px-5 py-5 shadow-sm sm:px-8 sm:py-6">
+                  <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-brand-accent/15 blur-3xl" />
+                  <div className="absolute bottom-0 right-0 h-px w-2/3 bg-gradient-to-l from-brand-accent/40 to-transparent" />
+                  <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand-accent/30 bg-brand-accent/10 text-brand-accent shadow-sm">
+                        <Clock className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-brand-accent">Cuenta regresiva</p>
+                        <h3 className="mt-1 font-serif text-2xl font-bold tracking-tight text-brand-text sm:text-3xl">
+                          {countdown.isStarted ? "La rifa está por iniciar" : "La rifa inicia en"}
+                        </h3>
+                        {countdown.scheduledLabel && (
+                          <p className="mt-1 text-sm font-medium text-brand-muted">
+                            Programada para {countdown.scheduledLabel}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-brand-border bg-brand-bg px-5 py-4 text-center shadow-inner md:min-w-[260px]">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-brand-muted">Tiempo restante</p>
+                      <p className="mt-1 font-serif text-3xl font-black tabular-nums tracking-tight text-brand-text sm:text-4xl">
+                        {countdown.formatted}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* HERO SECTION */}
-            <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-24 flex flex-col md:flex-row items-center gap-12">
+            <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 flex flex-col md:flex-row items-center gap-12">
               <div className="flex-1 space-y-6 text-center md:text-left z-10">
                 <div className="flex flex-wrap justify-center md:justify-start items-center gap-3">
                   {activeRaffle.estado === 'activa' ? (

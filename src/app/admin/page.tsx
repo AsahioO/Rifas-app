@@ -6,6 +6,8 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { mockStore, type Raffle, type Participant } from "@/lib/store";
 import { showToast } from "@/components/ui/Toast";
+import { dateTimeLocalToIso, isoToDateTimeLocal } from "@/lib/datetime";
+import { SchedulePicker } from "@/components/SchedulePicker";
 
 export default function AdminDashboardPage() {
     const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null);
@@ -382,7 +384,7 @@ export default function AdminDashboardPage() {
             {/* Modal de Edición */}
             {showEdit && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-brand-surface border border-brand-border p-6 rounded-3xl w-full max-w-md shadow-2xl relative">
+                    <div className="bg-brand-surface border border-brand-border p-6 rounded-3xl w-full max-w-xl shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                         <h3 className="text-2xl font-bold font-serif mb-6 text-brand-text">Editar Rifa Rápida</h3>
                         <form onSubmit={handleEditSave} className="space-y-4">
                             <div>
@@ -393,6 +395,12 @@ export default function AdminDashboardPage() {
                                 <label className="text-sm text-brand-muted">Premio General (Descripción)</label>
                                 <input type="text" required value={editData.descripcion || ''} onChange={e => setEditData({ ...editData, descripcion: e.target.value })} className="w-full bg-brand-bg border border-brand-border rounded-xl p-3 outline-none focus:border-brand-accent transition-colors text-brand-text mt-1" />
                             </div>
+                            <SchedulePicker
+                                compact
+                                value={isoToDateTimeLocal(editData.fecha_sorteo)}
+                                onChange={(value) => setEditData({ ...editData, fecha_sorteo: dateTimeLocalToIso(value) })}
+                                description="Ajusta el anuncio y contador de la página principal."
+                            />
                             <div className="flex gap-4 pt-4">
                                 <button type="button" onClick={() => setShowEdit(false)} className="flex-1 py-3 px-4 rounded-xl border border-brand-border hover:bg-brand-bg text-brand-text transition-colors">Cancelar</button>
                                 <button type="submit" className="flex-1 py-3 px-4 rounded-xl bg-brand-accent text-white font-bold hover:bg-brand-accent/90 transition-colors shadow-sm">Guardar</button>
