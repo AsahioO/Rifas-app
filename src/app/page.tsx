@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Ticket as TicketIcon, Clock, Trophy, PartyPopper, ChevronLeft, ChevronRight } from "lucide-react";
-import confetti from "canvas-confetti";
 import { mockStore, type Raffle, type Participant } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
+import { RaffleWheel } from "@/components/RaffleWheel";
 
 export default function LandingPage() {
   const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null);
@@ -24,6 +24,8 @@ export default function LandingPage() {
   const [liveWinner, setLiveWinner] = useState<{ boleto: number; nombre: string } | null>(null);
   const [liveIsResetting, setLiveIsResetting] = useState(false);
   const [liveSpunCard, setLiveSpunCard] = useState<{ boleto: number; nombre: string } | null>(null);
+  const [liveAttempt, setLiveAttempt] = useState(1);
+  const [liveTotalAttempts, setLiveTotalAttempts] = useState(1);
   const liveRef = useRef<HTMLDivElement>(null);
 
   // Auto-slide carousel
@@ -38,7 +40,8 @@ export default function LandingPage() {
   const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % activeRaffle!.fotos.length);
   const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + activeRaffle!.fotos.length) % activeRaffle!.fotos.length);
 
-  const fireConfetti = useCallback(() => {
+  const fireConfetti = useCallback(async () => {
+    const confetti = (await import("canvas-confetti")).default;
     const duration = 3 * 1000;
     const end = Date.now() + duration;
     const frame = () => {
@@ -54,8 +57,9 @@ export default function LandingPage() {
       const data = await mockStore.getActiveRaffle();
       setActiveRaffle(data);
       if (data) {
-        setTakenTickets(await mockStore.getTakenTickets());
-        setParticipants(await mockStore.getParticipants());
+        const parts = await mockStore.getParticipants(data.id);
+        setParticipants(parts);
+        setTakenTickets(parts.flatMap(p => p.boletos));
         if (data.estado === 'finalizada' && !confettiFired.current) {
           fireConfetti();
           confettiFired.current = true;
@@ -77,26 +81,38 @@ export default function LandingPage() {
       const evento = payload.evento as string;
 
       if (evento === 'girando') {
+        const intento = Number(payload.intento) || 1;
+        const totalIntentos = Number(payload.totalIntentos) || intento;
         setLiveActive(true);
         setLiveWinner(null);
         setLiveSpunCard(null);
         setLiveIsResetting(false);
+        setLiveAttempt(intento);
+        setLiveTotalAttempts(totalIntentos);
+        if (intento === 1) setLiveEliminated([]);
         setLiveSlices(payload.slices as LiveSlice[]);
         setLiveRotation(payload.rotation as number);
-        setTimeout(() => liveRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+        setTimeout(() => {
+          const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          liveRef.current?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+        }, 300);
       }
 
       if (evento === 'eliminado') {
-        setLiveSpunCard({ boleto: payload.boleto as number, nombre: payload.nombre as string });
+        const boletoEliminado = payload.boleto as number;
+        const nombreEliminado = payload.nombre as string;
+        const intentoEliminado = Number(payload.intento) || 1;
+        setLiveAttempt(Number(payload.intento) || 1);
+        setLiveSpunCard({ boleto: boletoEliminado, nombre: nombreEliminado });
         setTimeout(() => {
-          setLiveEliminated(prev => [...prev, { boleto: payload.boleto as number, nombre: payload.nombre as string, intento: payload.intento as number }]);
+          setLiveEliminated(prev => [...prev, { boleto: boletoEliminado, nombre: nombreEliminado, intento: intentoEliminado }]);
+          setLiveSlices(prev => prev.filter(slice => slice.boleto !== boletoEliminado));
         }, 1500);
       }
 
       if (evento === 'reset') {
         setLiveIsResetting(true);
         setLiveRotation(0);
-        setLiveSpunCard(null);
         setTimeout(() => setLiveIsResetting(false), 50);
       }
 
@@ -106,13 +122,15 @@ export default function LandingPage() {
         const duration = 5 * 1000;
         const animationEnd = Date.now() + duration;
         const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
-        const confettiInterval = setInterval(() => {
-          const timeLeft = animationEnd - Date.now();
-          if (timeLeft <= 0) return clearInterval(confettiInterval);
-          const particleCount = 50 * (timeLeft / duration);
-          confetti({ ...defaults, particleCount, origin: { x: Math.random() * 0.3, y: Math.random() - 0.2 } });
-          confetti({ ...defaults, particleCount, origin: { x: Math.random() * 0.3 + 0.7, y: Math.random() - 0.2 } });
-        }, 250);
+        import("canvas-confetti").then(({ default: confetti }) => {
+          const confettiInterval = setInterval(() => {
+            const timeLeft = animationEnd - Date.now();
+            if (timeLeft <= 0) return clearInterval(confettiInterval);
+            const particleCount = 50 * (timeLeft / duration);
+            confetti({ ...defaults, particleCount, origin: { x: Math.random() * 0.3, y: Math.random() - 0.2 } });
+            confetti({ ...defaults, particleCount, origin: { x: Math.random() * 0.3 + 0.7, y: Math.random() - 0.2 } });
+          }, 250);
+        });
       }
     }).subscribe();
 
@@ -144,7 +162,7 @@ export default function LandingPage() {
         {loading ? (
           <div className="py-32 w-full text-center">
             <div className="w-8 h-8 border-4 border-brand-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-brand-muted animate-pulse">Cargando Rifa Activa...</p>
+            <p className="text-brand-muted animate-pulse">Cargando Rifa Activa…</p>
           </div>
         ) : !activeRaffle ? (
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col justify-center items-center py-16">
@@ -154,7 +172,7 @@ export default function LandingPage() {
                 <div className="relative">
                   <div className="absolute inset-0 bg-brand-accent/10 blur-[120px] rounded-full pointer-events-none" />
                   <div className="bg-brand-surface p-10 sm:p-14 rounded-2xl border border-brand-border relative overflow-hidden shadow-sm">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-accent to-transparent" />
+                    <div className="absolute top-0 left-0 w-full h-1 bg-brand-accent" />
 
                     <PartyPopper className="w-16 h-16 text-brand-accent mx-auto mb-6 animate-bounce" />
                     <h2 className="text-4xl sm:text-5xl font-serif font-bold text-brand-accent drop-shadow-sm mb-4">
@@ -163,7 +181,7 @@ export default function LandingPage() {
                     <p className="text-brand-muted mb-8 text-lg">La rifa <strong className="text-brand-text">{lastFinished.nombre}</strong> ha concluido</p>
 
                     <div className="bg-brand-bg p-8 rounded-xl border border-brand-border inline-block mx-auto shadow-sm">
-                      <p className="text-brand-accent text-7xl sm:text-8xl font-bold font-serif mb-3">#{lastFinished.ganador_boleto}</p>
+                      <p className="text-brand-accent text-7xl sm:text-8xl font-bold font-serif mb-3">{lastFinished.ganador_boleto}</p>
                       <p className="text-brand-text text-2xl sm:text-3xl font-bold">{lastFinished.ganador_nombre}</p>
                       <p className="text-brand-muted mt-2 text-sm uppercase tracking-widest">Boleto Ganador</p>
                     </div>
@@ -178,7 +196,7 @@ export default function LandingPage() {
                       </div>
                     )}
 
-                    <p className="text-brand-muted/70 text-xs mt-10 uppercase tracking-widest">¡Felicidades! Pronto habrá una nueva rifa...</p>
+                    <p className="text-brand-muted/70 text-xs mt-10 uppercase tracking-widest">¡Felicidades! Pronto habrá una nueva rifa…</p>
                   </div>
                 </div>
               </div>
@@ -237,10 +255,10 @@ export default function LandingPage() {
 
                 {activeRaffle.estado === 'finalizada' && activeRaffle.ganador_boleto ? (
                   <div className="pt-8 w-full md:w-auto">
-                    <div className="w-full sm:w-auto inline-flex items-center justify-center gap-6 bg-brand-accent/10 border border-brand-accent/30 px-8 py-6 rounded-full font-bold transition-all shadow-sm relative overflow-hidden group">
+                    <div className="w-full sm:w-auto inline-flex items-center justify-center gap-6 bg-brand-accent/10 border border-brand-accent/30 px-8 py-6 rounded-full font-bold transition-[background-color,border-color,box-shadow] shadow-sm relative overflow-hidden group">
                       <div className="absolute inset-0 bg-brand-accent/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-in-out skew-x-12" />
                       <div className="w-16 h-16 rounded-full bg-brand-accent text-white flex items-center justify-center text-3xl font-serif z-10">
-                        #{activeRaffle.ganador_boleto}
+                        {activeRaffle.ganador_boleto}
                       </div>
                       <div className="text-left z-10">
                         <div className="text-sm font-medium text-brand-accent uppercase tracking-widest font-serif">Gran Ganador</div>
@@ -250,7 +268,7 @@ export default function LandingPage() {
                   </div>
                 ) : (
                   <div className="pt-8 w-full md:w-auto flex flex-col gap-8">
-                    <a href="#boletos" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-brand-text text-brand-surface px-8 py-4 rounded-lg font-bold text-lg transition-all hover:bg-brand-wine hover:text-white hover:shadow-[0_0_20px_rgba(114,47,55,0.4)] hover:scale-105 active:scale-95">
+                    <a href="#boletos" className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-brand-text text-brand-surface px-8 py-4 rounded-lg font-bold text-lg transition-[background-color,color,box-shadow,transform] hover:bg-brand-wine hover:text-white hover:shadow-[0_0_20px_rgba(114,47,55,0.4)] hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2">
                       <TicketIcon className="w-6 h-6" />
                       Ver {activeRaffle.total_boletos} Boletos
                     </a>
@@ -275,7 +293,7 @@ export default function LandingPage() {
               </div>
 
               <div className="flex-1 w-full max-w-[320px] sm:max-w-md relative group mt-8 md:mt-0 mx-auto">
-                <div className="absolute inset-0 bg-brand-accent/5 blur-[100px] rounded-full group-hover:bg-brand-accent/10 transition-all duration-700" />
+                <div className="absolute inset-0 bg-brand-accent/5 blur-[100px] rounded-full group-hover:bg-brand-accent/10 transition-colors duration-700" />
                 <div className="relative aspect-[4/5] sm:aspect-square rounded-2xl overflow-hidden bg-brand-surface border border-brand-border p-2 sm:p-5 shadow-md">
                   <div className="w-full h-full bg-brand-bg rounded-xl flex items-center justify-center overflow-hidden relative border border-brand-border">
                     {activeRaffle.fotos && activeRaffle.fotos.length > 0 ? (
@@ -284,7 +302,7 @@ export default function LandingPage() {
                         <img
                           src={activeRaffle.fotos[currentImageIndex]}
                           alt={`${activeRaffle.nombre} - vista ${currentImageIndex + 1}`}
-                          className="object-cover w-full h-full transition-all duration-500 ease-in-out group-hover:scale-105"
+                          className="object-cover w-full h-full transition-transform duration-500 ease-in-out group-hover:scale-105"
                         />
 
                         {/* Controls (only if multiple images) */}
@@ -292,14 +310,14 @@ export default function LandingPage() {
                           <>
                             <button
                               onClick={prevImage}
-                              className="absolute left-2 top-1/2 -translate-y-1/2 p-3 sm:p-2 rounded-full bg-brand-surface/90 text-brand-text hover:bg-brand-surface active:bg-brand-surface active:scale-90 backdrop-blur transition-all opacity-0 group-hover:opacity-100 shadow-md border border-brand-border"
+                              className="absolute left-2 top-1/2 -translate-y-1/2 p-3 sm:p-2 rounded-full bg-brand-surface/90 text-brand-text hover:bg-brand-surface active:bg-brand-surface active:scale-90 backdrop-blur transition-[background-color,opacity,box-shadow,transform] opacity-0 group-hover:opacity-100 shadow-md border border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2"
                               aria-label="Anterior imagen"
                             >
                               <ChevronLeft className="w-6 h-6 sm:w-5 sm:h-5" />
                             </button>
                             <button
                               onClick={nextImage}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 p-3 sm:p-2 rounded-full bg-brand-surface/90 text-brand-text hover:bg-brand-surface active:bg-brand-surface active:scale-90 backdrop-blur transition-all opacity-0 group-hover:opacity-100 shadow-md border border-brand-border"
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-3 sm:p-2 rounded-full bg-brand-surface/90 text-brand-text hover:bg-brand-surface active:bg-brand-surface active:scale-90 backdrop-blur transition-[background-color,opacity,box-shadow,transform] opacity-0 group-hover:opacity-100 shadow-md border border-brand-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2"
                               aria-label="Siguiente imagen"
                             >
                               <ChevronRight className="w-6 h-6 sm:w-5 sm:h-5" />
@@ -311,7 +329,7 @@ export default function LandingPage() {
                                 <button
                                   key={dotIdx}
                                   onClick={() => setCurrentImageIndex(dotIdx)}
-                                  className={`h-2 rounded-full transition-all duration-300 ${dotIdx === currentImageIndex ? 'bg-brand-accent w-6' : 'bg-brand-muted/40 hover:bg-brand-muted/80 w-2'} active:scale-90`}
+                                  className={`h-2 rounded-full transition-[background-color,width,transform] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 ${dotIdx === currentImageIndex ? 'bg-brand-accent w-6' : 'bg-brand-muted/40 hover:bg-brand-muted/80 w-2'} active:scale-90`}
                                   style={{ minWidth: '8px', minHeight: '8px', padding: '4px' }}
                                   aria-label={`Ir a imagen ${dotIdx + 1}`}
                                 />
@@ -330,125 +348,91 @@ export default function LandingPage() {
 
             {/* ===== LIVE ROULETTE SECTION ===== */}
             {liveActive && (
-              <section ref={liveRef} className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-2xl h-[1px] bg-gradient-to-r from-transparent via-brand-sale/50 to-transparent" />
-
-                <div className="text-center space-y-2 mb-10">
-                  <div className="inline-flex items-center gap-2 bg-brand-sale/10 text-brand-sale border border-brand-sale/20 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wider animate-pulse">
-                    <div className="w-2 h-2 bg-brand-sale rounded-full" />
-                    En Vivo
-                  </div>
-                  <h3 className="font-serif text-3xl sm:text-4xl font-bold text-brand-text">¡El Sorteo está ocurriendo ahora!</h3>
-                </div>
-
-                <div className="flex flex-col lg:flex-row gap-8 items-center justify-center">
-                  {/* Live Wheel */}
-                  <div className="relative w-[280px] sm:w-[350px] aspect-square mx-auto">
-                    <div className={`absolute inset-0 rounded-full blur-[80px] transition-all duration-1000 ${liveWinner ? 'bg-brand-accent/50 scale-125' : 'bg-brand-accent/30 scale-100'}`} />
-
-                    {/* Pointer */}
-                    {!liveWinner && (
-                      <div className="absolute -top-4 sm:-top-6 left-1/2 -translate-x-1/2 z-40">
-                        <div className="w-0 h-0 border-l-[15px] sm:border-l-[20px] border-l-transparent border-r-[15px] sm:border-r-[20px] border-r-transparent border-t-[30px] sm:border-t-[40px] border-t-brand-accent drop-shadow-[0_4px_4px_rgba(0,0,0,0.1)]" />
+              <section ref={liveRef} className="w-full bg-[#15100b] px-4 py-10 text-[#fbf6ea] shadow-[inset_0_1px_0_rgba(255,255,255,0.05),inset_0_-1px_0_rgba(255,255,255,0.05)] sm:px-6 lg:px-8 lg:py-14 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="mx-auto w-full max-w-7xl">
+                  <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                      <div className="inline-flex items-center gap-3 rounded-full border border-[#51392b] bg-[#21170f] px-4 py-2 text-xs font-black uppercase tracking-[0.28em] text-[#f1e2bf]">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[#c84b4b] shadow-[0_0_0_5px_rgba(200,75,75,0.16)]" />
+                        En vivo
                       </div>
-                    )}
-
-                    {/* Wheel */}
-                    <div
-                      className={`absolute inset-0 rounded-full shadow-2xl overflow-hidden bg-brand-surface
-                        ${liveIsResetting ? 'duration-0' : 'transition-transform duration-[4000ms] ease-[cubic-bezier(0.25,0.1,0.25,1)]'}
-                        ${liveWinner ? 'border-4 sm:border-8 border-brand-accent shadow-[0_0_50px_rgba(200,169,110,0.3)]' : 'border-4 sm:border-8 border-brand-border'}
-                      `}
-                      style={{ transform: `rotate(${liveRotation}deg)` }}
-                    >
-                      <svg viewBox="0 0 100 100" className="w-full h-full">
-                        {liveSlices.length === 1 ? (
-                          <>
-                            <circle cx="50" cy="50" r="50" fill="#E8E4DF" />
-                            <text x="50" y="50" fill="#1A1A1A" fontSize="4" fontWeight="bold" textAnchor="middle" dominantBaseline="middle">
-                              #{liveSlices[0].boleto} {liveSlices[0].nombre}
-                            </text>
-                          </>
-                        ) : (
-                          liveSlices.map((slice, i) => {
-                            const N = liveSlices.length;
-                            const startPercent = i / N;
-                            const endPercent = (i + 1) / N;
-                            const startX = Math.cos(2 * Math.PI * startPercent) * 50 + 50;
-                            const startY = Math.sin(2 * Math.PI * startPercent) * 50 + 50;
-                            const endX = Math.cos(2 * Math.PI * endPercent) * 50 + 50;
-                            const endY = Math.sin(2 * Math.PI * endPercent) * 50 + 50;
-                            const largeArcFlag = endPercent - startPercent > 0.5 ? 1 : 0;
-                            const pathData = `M 50 50 L ${startX} ${startY} A 50 50 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
-                            const midPercent = (startPercent + endPercent) / 2;
-                            const angleDeg = midPercent * 360;
-                            const colors = ['#F7F5F2', '#E8E4DF', '#FFFFFF'];
-                            const fontSize = N < 10 ? 4 : N < 20 ? 3 : N < 40 ? 2 : 1.5;
-
-                            return (
-                              <g key={`live-${slice.boleto}-${i}`}>
-                                <path d={pathData} fill={colors[i % colors.length]} stroke="rgba(26,26,26,0.1)" strokeWidth="0.5" />
-                                <text x="50" y="50" fill="#1A1A1A" fontSize={fontSize} fontWeight="bold" textAnchor="end" dominantBaseline="middle"
-                                  transform={`rotate(${angleDeg}, 50, 50) translate(46, 0)`}>
-                                  #{slice.boleto}
-                                </text>
-                              </g>
-                            );
-                          })
-                        )}
-                      </svg>
+                      <h3 className="mt-4 font-serif text-3xl font-black tracking-tight text-[#fbf6ea] sm:text-5xl">El sorteo está en marcha</h3>
+                      <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-[#cdbf9f] sm:text-base">
+                        Sigue cada giro en tiempo real. Los boletos eliminados salen del tablero hasta llegar al intento ganador.
+                      </p>
                     </div>
 
-                    {/* Center Pin */}
-                    {!liveSpunCard && !liveWinner && (
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 sm:w-10 sm:h-10 bg-brand-bg border-2 sm:border-4 border-brand-border rounded-full z-20 shadow-lg" />
-                    )}
-
-                    {/* Eliminated Overlay */}
-                    {liveSpunCard && !liveWinner && (
-                      <div className="absolute inset-0 z-30 flex items-center justify-center bg-brand-surface/90 backdrop-blur-sm rounded-full animate-in zoom-in duration-300 border border-brand-border">
-                        <div className="text-center px-4">
-                          <h3 className="text-brand-sale font-bold text-3xl sm:text-4xl font-serif uppercase drop-shadow-sm">¡Eliminado!</h3>
-                          <p className="text-brand-text text-2xl sm:text-3xl mt-2 font-bold">#{liveSpunCard.boleto}</p>
-                          <p className="text-brand-muted truncate w-full mt-1 text-sm sm:text-lg">{liveSpunCard.nombre}</p>
-                        </div>
+                    <div className="grid grid-cols-2 gap-3 text-center sm:flex sm:text-left">
+                      <div className="rounded-2xl border border-[#3b3024] bg-[#21170f] px-5 py-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#cdbf9f]">Intento</p>
+                        <p className="mt-1 text-2xl font-black tabular-nums text-[#f1e2bf]">{Math.min(liveAttempt, liveTotalAttempts)}/{liveTotalAttempts}</p>
                       </div>
-                    )}
-
-                    {/* Winner Overlay */}
-                    {liveWinner && (
-                      <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-brand-surface/95 backdrop-blur-md rounded-full animate-in zoom-in duration-700 border-4 border-brand-accent">
-                        <PartyPopper className="w-10 h-10 sm:w-14 sm:h-14 text-brand-accent mb-2 animate-bounce" />
-                        <h3 className="text-brand-accent font-bold text-3xl sm:text-4xl font-serif uppercase drop-shadow-sm">¡GANADOR!</h3>
-                        <p className="text-brand-text text-4xl sm:text-5xl font-bold mt-2 font-serif">#{liveWinner.boleto}</p>
-                        <p className="text-brand-text/90 text-base sm:text-xl mt-2 truncate px-6 w-full text-center">{liveWinner.nombre}</p>
+                      <div className="rounded-2xl border border-[#3b3024] bg-[#21170f] px-5 py-4">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#cdbf9f]">Boletos</p>
+                        <p className="mt-1 text-2xl font-black tabular-nums text-[#f1e2bf]">{liveSlices.length}</p>
                       </div>
-                    )}
+                    </div>
                   </div>
 
-                  {/* Eliminated List */}
-                  {liveEliminated.length > 0 && (
-                    <div className="w-full lg:max-w-xs bg-brand-surface p-6 rounded-xl border border-brand-border shadow-sm max-h-[350px] overflow-y-auto space-y-2">
-                      <h4 className="font-serif font-bold text-sm uppercase tracking-wider text-brand-muted mb-3">Eliminados</h4>
-                      {liveEliminated.map((el, idx) => (
-                        <div key={`live-el-${el.boleto}-${idx}`} className="flex items-center justify-between p-3 bg-brand-sale/5 border border-brand-sale/10 rounded-lg text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-brand-sale/10 text-brand-sale flex items-center justify-center font-bold text-xs">{el.intento}°</span>
-                            <span className="text-brand-muted line-through">#{el.boleto}</span>
+                  <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
+                    <div className="rounded-[2rem] border border-[#3b3024] bg-[#21170f] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.24)] sm:p-8">
+                      <RaffleWheel
+                        slices={liveSlices}
+                        rotation={liveRotation}
+                        isResetting={liveIsResetting}
+                        result={liveSpunCard}
+                        winner={liveWinner}
+                        currentAttempt={liveAttempt}
+                        totalAttempts={liveTotalAttempts}
+                        showNames={true}
+                        centerLabel="LIVE"
+                        className="mx-auto w-full max-w-[440px] sm:max-w-[560px]"
+                      />
+                    </div>
+
+                    <aside className="rounded-[2rem] border border-[#3b3024] bg-[#21170f] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.2)] sm:p-6">
+                      <div className="mb-5 border-b border-[#3b3024] pb-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.32em] text-[#c5a15f]">Registro</p>
+                        <h4 className="mt-2 font-serif text-2xl font-bold text-[#fbf6ea]">Salida de boletos</h4>
+                      </div>
+
+                      {liveWinner && (
+                        <div className="mb-4 rounded-2xl border border-[#b99a61] bg-[#fbf6ea] p-4 text-[#21170f]">
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#8a6f3f]">Ganador confirmado</p>
+                          <p className="mt-2 text-3xl font-black tabular-nums">{liveWinner.boleto}</p>
+                          <p className="truncate text-sm font-bold text-[#5f5141]" title={liveWinner.nombre}>{liveWinner.nombre}</p>
+                        </div>
+                      )}
+
+                      <div className="max-h-[320px] space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+                        {liveEliminated.map((el, idx) => (
+                          <div key={`live-el-${el.boleto}-${idx}`} className="flex items-center justify-between rounded-xl border border-[#3b3024] bg-[#18120d] p-3 text-sm">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#8a2f2f] text-xs font-black text-[#e9b0a8]">{el.intento}°</span>
+                              <div className="min-w-0">
+                                <p className="font-bold text-[#fbf6ea] line-through decoration-[#8a2f2f]">{el.boleto}</p>
+                                <p className="truncate text-xs text-[#a9977b]" title={el.nombre}>{el.nombre}</p>
+                              </div>
+                            </div>
+                            <span className="rounded-full border border-[#8a2f2f] px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#e9b0a8]">Eliminado</span>
                           </div>
-                          <span className="text-xs text-brand-sale/80 font-bold uppercase">Agua</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+
+                        {liveEliminated.length === 0 && !liveWinner && (
+                          <div className="rounded-xl border border-dashed border-[#3b3024] p-6 text-center text-sm font-medium text-[#cdbf9f]">
+                            Esperando el primer resultado del sorteo.
+                          </div>
+                        )}
+                      </div>
+                    </aside>
+                  </div>
                 </div>
               </section>
             )}
 
             {/* BOLETOS GRID */}
             <section id="boletos" className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 border-t border-brand-border relative">
-              {/* Decorative gradient */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-2xl h-[1px] bg-gradient-to-r from-transparent via-brand-accent/30 to-transparent" />
+              <div className="absolute top-0 left-1/2 h-[1px] w-3/4 max-w-2xl -translate-x-1/2 bg-brand-border" />
 
               <div className="text-center space-y-4 mb-16">
                 <h3 className="font-serif text-4xl sm:text-5xl font-bold text-brand-text">Elige tu número de la suerte</h3>
@@ -490,14 +474,14 @@ export default function LandingPage() {
                         >
                           {/* Hover Effect for Available */}
                           {!isTaken && (
-                            <div className="absolute inset-0 bg-gradient-to-r from-brand-accent/0 via-brand-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="absolute inset-0 bg-brand-accent/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                           )}
 
                           {/* Left Side: Number & Owner */}
                           <div className="flex items-center gap-4 relative z-10">
                             <div className={`
                                 w-12 h-12 rounded-xl flex items-center justify-center font-bold font-serif text-lg border shadow-sm shrink-0
-                                ${isTaken ? 'bg-brand-surface border-brand-border text-brand-muted/70' : 'bg-brand-bg border-brand-accent/30 text-brand-accent group-hover:bg-brand-accent group-hover:text-white transition-all duration-300'}
+                                ${isTaken ? 'bg-brand-surface border-brand-border text-brand-muted/70' : 'bg-brand-bg border-brand-accent/30 text-brand-accent group-hover:bg-brand-accent group-hover:text-white transition-[background-color,border-color,color] duration-300'}
                               `}>
                               {num}
                             </div>

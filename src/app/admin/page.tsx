@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trophy, Users, Ticket, ArrowRight, Activity, Plus, Edit, Trash2, Play } from "lucide-react";
+import { Trophy, Users, Ticket, ArrowRight, Activity, Plus, Edit, Trash2, Play, PowerOff } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { mockStore, type Raffle, type Participant } from "@/lib/store";
+import { showToast } from "@/components/ui/Toast";
 
 export default function AdminDashboardPage() {
     const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null);
@@ -24,6 +25,7 @@ export default function AdminDashboardPage() {
         const raffle = await mockStore.getActiveRaffle();
         setActiveRaffle(raffle);
         if (raffle) {
+            setLastFinished(null);
             const stats = await mockStore.getFinancialStats();
             setFinancialStats(stats);
             if (stats) {
@@ -31,6 +33,9 @@ export default function AdminDashboardPage() {
                 setTakenTickets(stats.participants.flatMap(p => p.boletos));
             }
         } else {
+            setFinancialStats(null);
+            setParticipants([]);
+            setTakenTickets([]);
             // Si no hay activa, revisar si hay una recién finalizada para mostrar panel de archivo
             const finished = await mockStore.getLastFinishedRaffle();
             setLastFinished(finished);
@@ -47,8 +52,24 @@ export default function AdminDashboardPage() {
     const handleDelete = async () => {
         if (confirm("¿Estás seguro de eliminar esta rifa y todos sus participantes? Esta acción no se puede deshacer.")) {
             await mockStore.resetStore();
-            window.location.reload();
+            showToast("Rifa cancelada correctamente.", "success");
+            fetchStats();
         }
+    };
+
+    const handleDeactivate = async () => {
+        if (!confirm("¿Desactivar esta rifa? Volverá a borrador, dejará de mostrarse públicamente y podrás publicarla de nuevo más adelante.")) {
+            return;
+        }
+
+        const { error } = await mockStore.deactivateActiveRaffle();
+        if (error) {
+            showToast(error.message, "error");
+            return;
+        }
+
+        showToast("Rifa desactivada y guardada como borrador.", "success");
+        await fetchStats();
     };
 
     const handleEditSave = async (e: React.FormEvent) => {
@@ -150,8 +171,13 @@ export default function AdminDashboardPage() {
                             <button
                                 onClick={async () => {
                                     if (confirm('¿Ocultar al ganador de la página pública? La información se conservará en el historial.')) {
-                                        await mockStore.archiveWinner();
-                                        window.location.reload();
+                                        const { error } = await mockStore.archiveWinner();
+                                        if (error) {
+                                            showToast(error.message, "error");
+                                        } else {
+                                            showToast("Ganador ocultado de la página pública.", "success");
+                                            fetchStats();
+                                        }
                                     }
                                 }}
                                 className="z-10 bg-brand-bg hover:bg-brand-border text-brand-muted hover:text-brand-text px-6 py-4 rounded-xl font-medium transition-all border border-brand-border text-sm"
@@ -230,10 +256,13 @@ export default function AdminDashboardPage() {
                                 </h3>
                                 {activeRaffle.estado === 'activa' && (
                                     <div className="flex items-center gap-2">
-                                        <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setEditData(activeRaffle); setShowEdit(true); }} className="p-2 bg-brand-bg hover:bg-brand-border rounded-lg text-brand-muted hover:text-brand-text transition-colors" title="Editar Rifa">
+                                        <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setEditData(activeRaffle); setShowEdit(true); }} className="p-2 bg-brand-bg hover:bg-brand-border rounded-lg text-brand-muted hover:text-brand-text transition-colors" title="Editar Rifa" aria-label="Editar rifa activa">
                                             <Edit className="w-4 h-4" />
                                         </motion.button>
-                                        <motion.button whileTap={{ scale: 0.9 }} onClick={handleDelete} className="p-2 bg-brand-sale/10 hover:bg-brand-sale/20 text-brand-sale hover:text-brand-sale rounded-lg transition-colors" title="Cancelar Rifa">
+                                        <motion.button whileTap={{ scale: 0.9 }} onClick={handleDeactivate} className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-600 hover:text-amber-700 rounded-lg transition-colors" title="Desactivar Rifa" aria-label="Desactivar rifa activa">
+                                            <PowerOff className="w-4 h-4" />
+                                        </motion.button>
+                                        <motion.button whileTap={{ scale: 0.9 }} onClick={handleDelete} className="p-2 bg-brand-sale/10 hover:bg-brand-sale/20 text-brand-sale hover:text-brand-sale rounded-lg transition-colors" title="Cancelar Rifa" aria-label="Cancelar rifa activa">
                                             <Trash2 className="w-4 h-4" />
                                         </motion.button>
                                     </div>

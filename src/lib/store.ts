@@ -26,6 +26,21 @@ export type Participant = {
     created_at: string;
 };
 
+export function isValidParticipantName(nombre: string): boolean {
+    const trimmed = nombre.trim();
+    if (trimmed.length < 2) return false;
+    if (/^\d+$/.test(trimmed)) return false;
+    return true;
+}
+
+export function validateParticipantName(nombre: string): string | null {
+    const trimmed = nombre.trim();
+    if (trimmed.length === 0) return "El nombre no puede estar vacío.";
+    if (trimmed.length < 2) return "El nombre debe tener al menos 2 caracteres.";
+    if (/^\d+$/.test(trimmed)) return "El nombre no puede contener solo números. Debe ser un nombre real.";
+    return null;
+}
+
 // Real database class
 class Store {
     // --- API Methods ---
@@ -224,6 +239,11 @@ class Store {
     }
 
     async registerParticipant(nombre: string, telefono: string, boletos: number[], raffleId?: string): Promise<{ data: Participant | null, error: Error | null }> {
+        const nameError = validateParticipantName(nombre);
+        if (nameError) {
+            return { data: null, error: new Error(nameError) };
+        }
+
         let targetRaffle: Raffle | null = null;
 
         if (raffleId) {
@@ -270,6 +290,11 @@ class Store {
     }
 
     async updateParticipant(id: string, nombre: string, telefono: string, boletos: number[]): Promise<{ data: Participant | null, error: Error | null }> {
+        const nameError = validateParticipantName(nombre);
+        if (nameError) {
+            return { data: null, error: new Error(nameError) };
+        }
+
         const deduped = Array.from(new Set(boletos)).sort((a, b) => a - b);
         if (deduped.length !== boletos.length) {
             return { data: null, error: new Error("Hay números duplicados en la selección.") };
@@ -359,6 +384,13 @@ class Store {
                 .update({ estado: 'finalizada', ganador_nombre: 'Cancelada' })
                 .eq('id', activeRaffle.id);
         }
+    }
+
+    async deactivateActiveRaffle(): Promise<{ data: Raffle | null, error: Error | null }> {
+        const activeRaffle = await this.getActiveRaffle();
+        if (!activeRaffle) return { data: null, error: new Error("No hay rifa activa para desactivar.") };
+
+        return this.updateRaffle(activeRaffle.id, { estado: 'borrador' });
     }
 
     async archiveWinner(): Promise<{ error: Error | null }> {

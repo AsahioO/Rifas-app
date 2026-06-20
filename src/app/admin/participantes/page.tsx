@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Users, Plus, Ticket, Search, Loader2, Pencil } from "lucide-react";
 import { motion } from "framer-motion";
-import { mockStore, type Participant, type Raffle } from "@/lib/store";
+import { mockStore, type Participant, type Raffle, validateParticipantName } from "@/lib/store";
 import { showToast } from "@/components/ui/Toast";
 
 function ParticipantesContent() {
@@ -85,6 +85,13 @@ function ParticipantesContent() {
 
         if (numeros.length === 0) {
             setFormError("Ingresa al menos un número válido.");
+            setFormLoading(false);
+            return;
+        }
+
+        const nameError = validateParticipantName(nombre);
+        if (nameError) {
+            setFormError(nameError);
             setFormLoading(false);
             return;
         }

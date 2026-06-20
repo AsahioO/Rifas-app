@@ -39,6 +39,18 @@
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @layer utilities {
@@ -76,14 +88,28 @@
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
   }
 
-  .gold-gradient {
-    background-image: linear-gradient(to right, #fde047, #d4af37, #996515);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
   .text-balance {
     text-wrap: balance;
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand-accent) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--brand-accent);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
   }
 }
