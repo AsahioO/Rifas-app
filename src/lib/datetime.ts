@@ -1,4 +1,11 @@
 const pad = (value: number) => value.toString().padStart(2, "0");
+const dateTimeFormatter = new Intl.DateTimeFormat("es-MX", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 export type CountdownDetails = {
     isStarted: boolean;
@@ -36,13 +43,7 @@ export function formatScheduledDate(value?: string | null): string {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "";
 
-    return new Intl.DateTimeFormat("es-MX", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        hour: "2-digit",
-        minute: "2-digit",
-    }).format(date);
+    return dateTimeFormatter.format(date);
 }
 
 export function getCountdownDetails(value?: string | null, nowMs = Date.now()): CountdownDetails | null {

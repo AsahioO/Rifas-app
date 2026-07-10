@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { Radio, Sparkles, Trophy, XCircle } from "lucide-react";
 import { RaffleWheel, type WheelSlice } from "@/components/RaffleWheel";
 import type { LiveDrawPhase, LiveEntry, LiveSlice } from "@/lib/live-draw";
@@ -17,7 +18,7 @@ type LiveRaffleStageProps = {
   consolationPrize: string | null;
 };
 
-function DrawMoment({ phase, result, winner, currentAttempt, totalAttempts, consolationPrize }: Pick<LiveRaffleStageProps, "phase" | "result" | "winner" | "currentAttempt" | "totalAttempts" | "consolationPrize">) {
+const DrawMoment = memo(function DrawMoment({ phase, result, winner, currentAttempt, totalAttempts, consolationPrize }: Pick<LiveRaffleStageProps, "phase" | "result" | "winner" | "currentAttempt" | "totalAttempts" | "consolationPrize">) {
   if (phase === "spinning") {
     return (
       <div className="live-moment live-moment--spinning" aria-live="polite">
@@ -46,9 +47,9 @@ function DrawMoment({ phase, result, winner, currentAttempt, totalAttempts, cons
   }
 
   return <div className="live-moment live-moment--ready"><span className="live-moment-icon"><Sparkles className="h-4 w-4" /></span><span><strong>Preparando el siguiente giro</strong><small>La ruleta está lista.</small></span></div>;
-}
+});
 
-export function LiveRaffleStage({
+export const LiveRaffleStage = memo(function LiveRaffleStage({
   slices,
   eliminated,
   winner,
@@ -60,7 +61,7 @@ export function LiveRaffleStage({
   result,
   consolationPrize,
 }: LiveRaffleStageProps) {
-  const latestEntries = [...eliminated].reverse();
+  const latestEntries = useMemo(() => [...eliminated].reverse(), [eliminated]);
 
   return (
     <section className="live-stage relative isolate overflow-hidden px-4 py-4 text-[#fffaf0] sm:px-6 sm:py-6 lg:px-8">
@@ -110,4 +111,4 @@ export function LiveRaffleStage({
       </div>
     </section>
   );
-}
+});

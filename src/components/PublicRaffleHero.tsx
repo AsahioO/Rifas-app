@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useRef } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Gift, Maximize2, Ticket, Tickets, X } from "lucide-react";
+import { memo, useCallback, useMemo, useRef } from "react";
+import { ChevronLeft, ChevronRight, Gift, Maximize2, Ticket, Tickets, X } from "lucide-react";
 import type { Raffle } from "@/lib/store";
-import type { CountdownDetails } from "@/lib/datetime";
+import { CountdownBanner } from "./CountdownBanner";
 
 type PublicRaffleHeroProps = {
   raffle: Raffle;
-  countdown: CountdownDetails | null;
+  scheduledDate: string | null | undefined;
   availableTickets: number;
   currentImageIndex: number;
   onPreviousImage: () => void;
@@ -15,15 +15,15 @@ type PublicRaffleHeroProps = {
   onSelectImage: (index: number) => void;
 };
 
-const formatPrice = (value: number) => new Intl.NumberFormat("es-MX", {
+const priceFormatter = new Intl.NumberFormat("es-MX", {
   style: "currency",
   currency: "MXN",
   maximumFractionDigits: 0,
-}).format(value);
+});
 
-export function PublicRaffleHero({
+export const PublicRaffleHero = memo(function PublicRaffleHero({
   raffle,
-  countdown,
+  scheduledDate,
   availableTickets,
   currentImageIndex,
   onPreviousImage,
@@ -34,7 +34,10 @@ export function PublicRaffleHero({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const isClosingRef = useRef(false);
   const imageCount = raffle.fotos.length;
-  const soldTickets = Math.max(0, raffle.total_boletos - availableTickets);
+  const soldTickets = useMemo(
+    () => Math.max(0, raffle.total_boletos - availableTickets),
+    [raffle.total_boletos, availableTickets]
+  );
 
   const openImageDialog = useCallback(() => {
     const dialog = imageDialogRef.current;
@@ -79,31 +82,7 @@ export function PublicRaffleHero({
 
   return (
     <>
-      {countdown && (
-        <section aria-label="Cuenta regresiva del sorteo" className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6 sm:pt-8 lg:px-8">
-          <div className="public-reveal relative overflow-hidden rounded-[1.5rem] border border-brand-border bg-brand-surface px-4 py-4 shadow-[0_16px_42px_rgba(69,52,25,0.07)] sm:px-6 sm:py-5">
-            <div className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-brand-accent/10 blur-3xl" />
-            <div className="relative grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-brand-accent/25 bg-[#faf5e9] text-brand-accent">
-                  <CalendarDays className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-brand-accent">Próximo sorteo</p>
-                  <p className="mt-1 text-sm font-semibold text-brand-text sm:text-base">
-                    {countdown.isStarted ? "El sorteo está por comenzar" : countdown.scheduledLabel}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-border bg-[#f8f5ef] px-3 py-2.5 sm:min-w-[184px] sm:justify-center">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-muted sm:hidden">Restante</span>
-                <span className="hidden text-[10px] font-bold uppercase tracking-[0.2em] text-brand-muted sm:inline">Tiempo restante</span>
-                <span className="font-mono text-2xl font-semibold tracking-[-0.08em] tabular-nums text-brand-text sm:block sm:text-3xl">{countdown.formatted}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      <CountdownBanner scheduledDate={scheduledDate} />
 
       <section className="mx-auto grid w-full max-w-7xl items-center gap-8 px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(22rem,0.72fr)] lg:gap-16 lg:px-8 lg:pb-28 lg:pt-16">
         <div className="public-reveal public-reveal-delay-1 order-2 lg:order-1">
@@ -123,7 +102,7 @@ export function PublicRaffleHero({
           <div className="mt-7 grid max-w-xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-brand-border bg-brand-border shadow-[0_12px_30px_rgba(69,52,25,0.05)]">
             <div className="bg-brand-surface px-4 py-4 sm:px-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-muted">Por boleto</p>
-              <p className="mt-1 text-2xl font-semibold tracking-[-0.05em] text-brand-text sm:text-3xl">{formatPrice(raffle.precio_boleto)}</p>
+              <p className="mt-1 text-2xl font-semibold tracking-[-0.05em] text-brand-text sm:text-3xl">{priceFormatter.format(raffle.precio_boleto)}</p>
             </div>
             <div className="bg-brand-surface px-4 py-4 sm:px-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-muted">Disponibles</p>
@@ -147,17 +126,20 @@ export function PublicRaffleHero({
           <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-white/70 bg-[#e9e3d7] p-2 shadow-[0_24px_48px_rgba(69,52,25,0.16)] sm:rounded-[2rem] sm:p-3">
             <div className="relative h-full overflow-hidden rounded-[1.25rem] bg-[#ddd3c2]">
               {imageCount > 0 ? (
-                <button ref={triggerRef} type="button" onClick={openImageDialog} className="group block h-full w-full cursor-zoom-in text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white" aria-label={`Ampliar imagen ${currentImageIndex + 1} de ${raffle.nombre}`}>
-                  {/* The storage host is configurable per raffle, so a fixed Next Image remote pattern would break valid prize images. */}
+                <button ref={triggerRef} type="button" onClick={openImageDialog} className="group relative block h-full w-full cursor-zoom-in text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white" aria-label={`Ampliar imagen ${currentImageIndex + 1} de ${raffle.nombre}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    key={raffle.fotos[currentImageIndex]}
-                    src={raffle.fotos[currentImageIndex]}
-                    alt={`${raffle.nombre} — imagen ${currentImageIndex + 1}`}
-                    className="public-image-fade h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.015]"
-                    loading="eager"
-                    decoding="async"
-                  />
+                  {raffle.fotos.map((foto, i) => (
+                    <img
+                      key={foto}
+                      src={foto}
+                      alt={`${raffle.nombre} — imagen ${i + 1}`}
+                      className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 group-hover:scale-[1.015] ${
+                        i === currentImageIndex ? "opacity-100" : "opacity-0 pointer-events-none"
+                      }`}
+                      loading={i === 0 ? "eager" : "lazy"}
+                      decoding="async"
+                    />
+                  ))}
                   <span className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded-lg border border-white/35 bg-[#211b13]/75 px-3 py-2 text-xs font-semibold text-white opacity-100 backdrop-blur-sm transition sm:opacity-0 sm:group-hover:opacity-100"><Maximize2 className="h-3.5 w-3.5" /> Ampliar</span>
                 </button>
               ) : (
@@ -228,4 +210,4 @@ export function PublicRaffleHero({
       )}
     </>
   );
-}
+});

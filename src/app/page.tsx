@@ -5,7 +5,6 @@ import { motion, useReducedMotion } from "framer-motion";
 import { PartyPopper, Trophy } from "lucide-react";
 import { mockStore, type Participant, type Raffle } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
-import { getCountdownDetails } from "@/lib/datetime";
 import type { LiveDrawPhase } from "@/lib/live-draw";
 import { LiveRaffleStage } from "@/components/LiveRaffleStage";
 import { PublicRaffleHero } from "@/components/PublicRaffleHero";
@@ -21,9 +20,7 @@ export default function LandingPage() {
   const [loading, setLoading] = useState(true);
   const [lastFinished, setLastFinished] = useState<Raffle | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [now, setNow] = useState(() => Date.now());
   const confettiFired = useRef(false);
-  const scheduledRaffleDate = activeRaffle?.fecha_sorteo ?? null;
 
   const [liveActive, setLiveActive] = useState(false);
   const [liveRotation, setLiveRotation] = useState(0);
@@ -65,13 +62,6 @@ export default function LandingPage() {
     return () => window.clearInterval(interval);
   }, [activeRaffle]);
 
-  useEffect(() => {
-    if (!scheduledRaffleDate) return;
-    setNow(Date.now());
-    const interval = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(interval);
-  }, [scheduledRaffleDate]);
-
   const fireConfetti = useCallback(async () => {
     const confetti = (await import("canvas-confetti")).default;
     const end = Date.now() + 3000;
@@ -82,6 +72,18 @@ export default function LandingPage() {
     };
     frame();
   }, []);
+
+  useEffect(() => {
+    if (!liveActive || hasAutoScrolledLive.current) return;
+    hasAutoScrolledLive.current = true;
+    const raf = requestAnimationFrame(() => {
+      liveRef.current?.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "center",
+      });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [liveActive, reduceMotion]);
 
   useEffect(() => {
     let mounted = true;
@@ -139,10 +141,6 @@ export default function LandingPage() {
         setLiveConsolationPrize(payload.premioConsolacion ? String(payload.premioConsolacion) : null);
         setLiveSlices(slices);
         setLiveRotation(Number(payload.rotation) || 0);
-        if (!hasAutoScrolledLive.current && window.innerWidth >= 1024) {
-          hasAutoScrolledLive.current = true;
-          scheduleLiveUpdate(() => liveRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" }), 300);
-        }
       }
 
       if (event === "eliminado") {
@@ -189,7 +187,6 @@ export default function LandingPage() {
     };
   }, [clearLiveTimeouts, fireConfetti, reduceMotion, scheduleLiveUpdate]);
 
-  const countdown = getCountdownDetails(scheduledRaffleDate, now);
   const availableTickets = useMemo(() => {
     if (!activeRaffle) return 0;
     const taken = new Set(participants.flatMap((participant) => participant.boletos.filter((boleto) => boleto >= 1 && boleto <= activeRaffle.total_boletos)));
@@ -203,14 +200,14 @@ export default function LandingPage() {
         ? "revealing"
         : "ready";
 
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     if (!activeRaffle?.fotos.length) return;
     setCurrentImageIndex((current) => (current + 1) % activeRaffle.fotos.length);
-  };
-  const previousImage = () => {
+  }, [activeRaffle?.fotos.length]);
+  const previousImage = useCallback(() => {
     if (!activeRaffle?.fotos.length) return;
     setCurrentImageIndex((current) => (current - 1 + activeRaffle.fotos.length) % activeRaffle.fotos.length);
-  };
+  }, [activeRaffle?.fotos.length]);
 
   return (
     <div className="min-h-screen bg-brand-bg text-brand-text">
@@ -228,7 +225,7 @@ export default function LandingPage() {
         ) : activeRaffle ? (
           <div className="flex flex-col">
             <div className="order-2 lg:order-1">
-              <PublicRaffleHero raffle={activeRaffle} countdown={countdown} availableTickets={availableTickets} currentImageIndex={Math.min(currentImageIndex, Math.max(0, activeRaffle.fotos.length - 1))} onPreviousImage={previousImage} onNextImage={nextImage} onSelectImage={setCurrentImageIndex} />
+              <PublicRaffleHero raffle={activeRaffle} scheduledDate={activeRaffle.fecha_sorteo} availableTickets={availableTickets} currentImageIndex={Math.min(currentImageIndex, Math.max(0, activeRaffle.fotos.length - 1))} onPreviousImage={previousImage} onNextImage={nextImage} onSelectImage={setCurrentImageIndex} />
             </div>
             {liveActive && (
               <div ref={liveRef} className="order-1 lg:order-2">
