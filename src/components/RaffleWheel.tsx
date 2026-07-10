@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { PartyPopper, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ type RaffleWheelProps = {
   centerLabel?: string;
   className?: string;
   consolationPrize?: string | null;
+  presentation?: "default" | "live";
 };
 
 const WHEEL_COLORS = [
@@ -86,7 +88,7 @@ function AttemptText({ currentAttempt, totalAttempts }: Pick<RaffleWheelProps, "
   );
 }
 
-export function RaffleWheel({
+export const RaffleWheel = memo(function RaffleWheel({
   slices,
   rotation,
   isResetting = false,
@@ -98,10 +100,40 @@ export function RaffleWheel({
   showNames = true,
   centerLabel = "RIFA",
   consolationPrize = null,
+  presentation = "default",
   className,
 }: RaffleWheelProps) {
   const total = slices.length;
   const hasSingleSlice = total === 1;
+  const hasExternalResult = presentation === "live";
+  const wheelSlices = useMemo(() => {
+    if (hasSingleSlice) return [];
+
+    const numFontSize = getFontSize(total);
+    const nameFontSize = getNameFontSize(total);
+    // En pantallas pequeñas, los nombres dentro de sectores muy delgados no se
+    // alcanzan a leer y aumentan mucho el trabajo de pintado del SVG.
+    const showNameLine = showNames && total <= 32 && nameFontSize >= 1;
+
+    return slices.map((slice, index) => {
+      const startPercent = index / total;
+      const endPercent = (index + 1) / total;
+      const [startX, startY] = getCoordinatesForPercent(startPercent);
+      const [endX, endY] = getCoordinatesForPercent(endPercent);
+      const largeArcFlag = endPercent - startPercent > 0.5 ? 1 : 0;
+
+      return {
+        ...slice,
+        index,
+        pathData: `M 50 50 L ${startX} ${startY} A 50 50 0 ${largeArcFlag} 1 ${endX} ${endY} Z`,
+        angleDeg: ((startPercent + endPercent) / 2) * 360,
+        displayName: truncateName(slice.nombre, total),
+        numFontSize,
+        nameFontSize,
+        showNameLine,
+      };
+    });
+  }, [hasSingleSlice, showNames, slices, total]);
   const ariaLabel = winner
     ? `Ganador del sorteo: boleto ${winner.boleto}, ${winner.nombre}`
     : result
@@ -113,8 +145,8 @@ export function RaffleWheel({
       className={cn("relative aspect-square text-[#fbf6ea]", className)}
       role="img"
       aria-label={ariaLabel}
-      aria-live={result || winner ? "polite" : undefined}
-      aria-atomic={result || winner ? "true" : undefined}
+      aria-live={!hasExternalResult && (result || winner) ? "polite" : undefined}
+      aria-atomic={!hasExternalResult && (result || winner) ? "true" : undefined}
     >
       <div className="absolute -inset-[7%] rounded-full bg-[#15100b] shadow-[0_30px_80px_rgba(0,0,0,0.28)]" />
       <div className="absolute -inset-[4.5%] rounded-full border-[10px] border-[#b99a61] bg-[#21170f] shadow-[inset_0_0_0_2px_rgba(255,246,226,0.22)] sm:border-[14px]" />
@@ -137,7 +169,7 @@ export function RaffleWheel({
         })}
       </svg>
 
-      {!winner && (
+      {(!winner || hasExternalResult) && (
         <div className="absolute -top-[12%] left-1/2 z-40 w-[17%] -translate-x-1/2 drop-shadow-[0_8px_10px_rgba(0,0,0,0.32)]">
           <svg viewBox="0 0 64 78" className="h-auto w-full" aria-hidden="true">
             <path d="M32 74 9 22c-2-5 2-10 7-10h32c5 0 9 5 7 10L32 74Z" fill="#c5a15f" stroke="#22180f" strokeWidth="5" strokeLinejoin="round" />
@@ -150,6 +182,7 @@ export function RaffleWheel({
       <div
         className={cn(
           "absolute inset-[4.5%] overflow-hidden rounded-full border-[4px] border-[#18110b] bg-[#0b3329] shadow-[inset_0_0_0_4px_rgba(240,221,176,0.45),inset_0_0_30px_rgba(0,0,0,0.35)] sm:border-[6px]",
+          "transform-gpu will-change-transform motion-reduce:transition-none",
           isResetting ? "duration-0" : "transition-transform duration-[5000ms] ease-[cubic-bezier(0.19,0.72,0.18,1)]",
           isDrawing && "shadow-[inset_0_0_0_4px_rgba(240,221,176,0.45),inset_0_0_30px_rgba(0,0,0,0.35),0_0_0_6px_rgba(197,161,95,0.2)]"
         )}
@@ -168,51 +201,38 @@ export function RaffleWheel({
                   </text>
                 </>
               ) : (
-                slices.map((slice, index) => {
-                  const startPercent = index / total;
-                  const endPercent = (index + 1) / total;
-                  const [startX, startY] = getCoordinatesForPercent(startPercent);
-                  const [endX, endY] = getCoordinatesForPercent(endPercent);
-                  const largeArcFlag = endPercent - startPercent > 0.5 ? 1 : 0;
-                  const pathData = `M 50 50 L ${startX} ${startY} A 50 50 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;
-                  const midPercent = (startPercent + endPercent) / 2;
-                  const angleDeg = midPercent * 360;
-                  const numFontSize = getFontSize(total);
-                  const nameFontSize = getNameFontSize(total);
-                  const displayName = truncateName(slice.nombre, total);
-                  const showNameLine = showNames && total <= 60 && nameFontSize >= 1;
-
+                wheelSlices.map((slice) => {
                   return (
-                    <g key={`${slice.boleto}-${index}`}>
-                      <path d={pathData} fill={WHEEL_COLORS[index % WHEEL_COLORS.length]} stroke="#0c0a06" strokeWidth="0.45" />
-                      <path d={pathData} fill="none" stroke="#f2dfad" strokeWidth="0.12" opacity="0.7" />
+                    <g key={`${slice.boleto}-${slice.index}`}>
+                      <path d={slice.pathData} fill={WHEEL_COLORS[slice.index % WHEEL_COLORS.length]} stroke="#0c0a06" strokeWidth="0.45" />
+                      <path d={slice.pathData} fill="none" stroke="#f2dfad" strokeWidth="0.12" opacity="0.7" />
                       <text
                         x="50"
                         y="50"
                         fill="#fff8e8"
                         textAnchor="end"
                         dominantBaseline="middle"
-                        transform={`rotate(${angleDeg}, 50, 50) translate(45.5, 0)`}
+                        transform={`rotate(${slice.angleDeg}, 50, 50) translate(45.5, 0)`}
                       >
                         <tspan
                           x="50"
-                          dy={showNameLine ? `-${numFontSize * 0.55}em` : "0"}
-                          fontSize={numFontSize}
+                          dy={slice.showNameLine ? `-${slice.numFontSize * 0.55}em` : "0"}
+                          fontSize={slice.numFontSize}
                           fontWeight="900"
                           letterSpacing="0.08em"
                         >
                           {slice.boleto}
                         </tspan>
-                        {showNameLine && (
+                        {slice.showNameLine && (
                           <tspan
                             x="50"
-                            dy={`${numFontSize * 1.2}em`}
-                            fontSize={nameFontSize}
+                            dy={`${slice.numFontSize * 1.2}em`}
+                            fontSize={slice.nameFontSize}
                             fontWeight="700"
                             letterSpacing="0.04em"
                             opacity="0.85"
                           >
-                            {displayName}
+                            {slice.displayName}
                           </tspan>
                         )}
                       </text>
@@ -227,14 +247,14 @@ export function RaffleWheel({
         </svg>
       </div>
 
-      {!result && !winner && (
+      {(!result && !winner || hasExternalResult) && (
         <div className="absolute left-1/2 top-1/2 z-30 flex h-[16%] w-[16%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] border-[#b99a61] bg-[#f7ecd4] text-[9px] font-black uppercase tracking-[0.18em] text-[#281c12] shadow-[0_8px_18px_rgba(0,0,0,0.32),inset_0_0_0_3px_rgba(255,255,255,0.6)] sm:text-xs">
           {centerLabel}
         </div>
       )}
 
-      {result && !winner && (
-        <div className="absolute inset-[8%] z-50 flex items-center justify-center rounded-full border-[5px] border-[#8a2f2f] bg-[#fbf6ea]/95 p-6 text-center text-[#21170f] shadow-[0_18px_45px_rgba(0,0,0,0.3)] animate-in zoom-in duration-300">
+      {!hasExternalResult && result && !winner && (
+        <div className="wheel-result-overlay absolute inset-[8%] z-50 flex items-center justify-center rounded-full border-[5px] border-[#8a2f2f] bg-[#fbf6ea]/95 p-6 text-center text-[#21170f] shadow-[0_18px_45px_rgba(0,0,0,0.3)]">
           <div className="max-w-[80%]">
             <p className="text-[10px] font-black uppercase tracking-[0.34em] text-[#8a2f2f] sm:text-xs">No ganador</p>
             <p className="mt-2 font-serif text-4xl font-black tabular-nums text-[#21170f] sm:text-6xl">{result.boleto}</p>
@@ -249,8 +269,8 @@ export function RaffleWheel({
         </div>
       )}
 
-      {winner && (
-        <div className="absolute inset-[6%] z-50 flex flex-col items-center justify-center rounded-full border-[6px] border-[#b99a61] bg-[#fbf6ea]/95 p-6 text-center text-[#21170f] shadow-[0_20px_55px_rgba(0,0,0,0.34)] animate-in zoom-in duration-700">
+      {!hasExternalResult && winner && (
+        <div className="wheel-winner-overlay absolute inset-[6%] z-50 flex flex-col items-center justify-center rounded-full border-[6px] border-[#b99a61] bg-[#fbf6ea]/95 p-6 text-center text-[#21170f] shadow-[0_20px_55px_rgba(0,0,0,0.34)]">
           <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2 border-[#b99a61] bg-[#21170f] text-[#f2dfad] shadow-[inset_0_0_0_2px_rgba(242,223,173,0.2)] sm:h-16 sm:w-16">
             <PartyPopper className="h-8 w-8" />
           </div>
@@ -264,6 +284,6 @@ export function RaffleWheel({
       )}
     </div>
   );
-}
+});
 
 export type { RaffleWheelProps };

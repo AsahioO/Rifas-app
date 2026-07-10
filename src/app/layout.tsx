@@ -1,13 +1,26 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ToastContainer } from "@/components/ui/Toast";
+
+const geist = localFont({
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-geist",
+  weight: "100 900",
+});
+
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+});
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#F7F5F2",
+  themeColor: "#F7F4EE",
 };
 
 export const metadata: Metadata = {
@@ -29,16 +42,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="scroll-smooth">
-      <head>
-        <meta name="mobile-web-app-capable" content="yes" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
-      </head>
-      <body className={cn("font-sans antialiased text-brand-text min-h-screen bg-brand-bg")}>
+      <head><meta name="mobile-web-app-capable" content="yes" /></head>
+      <body className={cn(geist.variable, geistMono.variable, "font-sans antialiased text-brand-text min-h-screen bg-brand-bg")}>
         {children}
         <ToastContainer />
       </body>

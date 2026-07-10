@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { mockStore, type Raffle, type Participant, isValidParticipantName } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { RaffleWheel } from "@/components/RaffleWheel";
+import { showToast } from "@/components/ui/Toast";
 
 export default function SorteoPage() {
     const [activeRaffle, setActiveRaffle] = useState<Raffle | null>(null);
@@ -31,6 +32,20 @@ export default function SorteoPage() {
 
     // Realtime Broadcast channel
     const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+    const drawTimeouts = useRef<number[]>([]);
+
+    const clearDrawTimeouts = useCallback(() => {
+        drawTimeouts.current.forEach((timeout) => window.clearTimeout(timeout));
+        drawTimeouts.current = [];
+    }, []);
+
+    const scheduleDrawUpdate = useCallback((callback: () => void, delay: number) => {
+        const timeout = window.setTimeout(() => {
+            drawTimeouts.current = drawTimeouts.current.filter((id) => id !== timeout);
+            callback();
+        }, delay);
+        drawTimeouts.current.push(timeout);
+    }, []);
 
     const broadcast = (evento: string, payload: Record<string, unknown>) => {
         channelRef.current?.send({
@@ -64,9 +79,10 @@ export default function SorteoPage() {
         loadData();
 
         return () => {
+            clearDrawTimeouts();
             supabase.removeChannel(channel);
         };
-    }, []);
+    }, [clearDrawTimeouts]);
 
     const fireConfetti = useCallback(async () => {
         const confetti = (await import("canvas-confetti")).default;
@@ -155,21 +171,29 @@ export default function SorteoPage() {
             premioConsolacion: activeRaffle.premio_consolacion?.trim() || null,
         });
 
-        setTimeout(() => {
+        scheduleDrawUpdate(() => {
             const isWinningAttempt = currentIntento >= activeRaffle.giro_ganador || N === 1;
 
             if (isWinningAttempt) {
-                setWinner({ boleto: selectedCard.boleto, nombre: selectedCard.nombre });
-                setIsFinished(true);
-                fireConfetti();
-                mockStore.finalizeRaffle(selectedCard.boleto, selectedCard.nombre);
-                setIsDrawing(false);
+                void (async () => {
+                    const { error } = await mockStore.finalizeRaffle(selectedCard.boleto, selectedCard.nombre);
+                    if (error) {
+                        setIsDrawing(false);
+                        showToast(`No se pudo guardar el ganador: ${error.message}`, "error");
+                        return;
+                    }
 
-                // 📡 BROADCAST: Ganador
-                broadcast('ganador', {
-                    boleto: selectedCard.boleto,
-                    nombre: selectedCard.nombre,
-                });
+                    setWinner({ boleto: selectedCard.boleto, nombre: selectedCard.nombre });
+                    setIsFinished(true);
+                    fireConfetti();
+                    setIsDrawing(false);
+
+                    // 📡 Solo se anuncia cuando el resultado ya quedó guardado.
+                    broadcast('ganador', {
+                        boleto: selectedCard.boleto,
+                        nombre: selectedCard.nombre,
+                    });
+                })();
             } else {
                 setSpunCard(selectedCard);
 
@@ -180,19 +204,19 @@ export default function SorteoPage() {
                     intento: currentIntento,
                 });
 
-                setTimeout(() => {
+                scheduleDrawUpdate(() => {
                     setEliminatedTickets(prev => [...prev, { boleto: selectedCard.boleto, nombre: selectedCard.nombre }]);
                     setCurrentIntento(prev => prev + 1);
 
                     setIsResetting(true);
                     setRotation(0);
-                        setTimeout(() => {
+                        scheduleDrawUpdate(() => {
                             setIsResetting(false);
                             setIsDrawing(false);
 
                             // 📡 BROADCAST: Reset de ruleta para siguiente giro
                             broadcast('reset', {});
-                    }, 50);
+                        }, 50);
                 }, 2000);
             }
         }, 5000);
@@ -213,7 +237,7 @@ export default function SorteoPage() {
     }
 
     return (
-        <div className={`${isLiveMode ? 'min-h-screen items-center justify-center bg-[#15100b] p-4 text-[#fbf6ea] sm:p-8' : 'min-h-[80vh] pt-8'} flex flex-col animate-in fade-in duration-500 overflow-hidden`}>
+        <div className={`${isLiveMode ? 'min-h-[100dvh] items-center justify-center bg-[#15100b] p-4 text-[#fbf6ea] safe-bottom safe-top sm:p-8' : 'min-h-[80vh] pt-8'} flex flex-col animate-in fade-in duration-500 overflow-x-hidden`}>
             {/* Header */}
             <div className={`flex items-center gap-4 mb-8 ${isLiveMode ? 'justify-center' : ''}`}>
                 {!isLiveMode && (
