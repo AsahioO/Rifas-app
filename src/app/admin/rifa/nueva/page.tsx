@@ -7,6 +7,7 @@ import Link from "next/link";
 import { mockStore, type Raffle } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { dateTimeLocalToIso, isoToDateTimeLocal } from "@/lib/datetime";
+import { optimizeImageForUpload } from "@/lib/image-optimization";
 import { SchedulePicker } from "@/components/SchedulePicker";
 
 function RaffleForm() {
@@ -130,13 +131,14 @@ function RaffleForm() {
 
         if (files.length > 0) {
             for (const file of files) {
-                const fileExt = file.name.split('.').pop();
+                const uploadFile = await optimizeImageForUpload(file);
+                const fileExt = uploadFile.name.split('.').pop();
                 const fileName = `${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
                 const filePath = `premios/${fileName}`;
 
                 const { error: uploadError } = await supabase.storage
                     .from('rifas-images')
-                    .upload(filePath, file);
+                    .upload(filePath, uploadFile, { contentType: uploadFile.type });
 
                 if (uploadError) {
                     setError("Error al subir imagen. ¿Creaste el Cubo (Bucket) 'rifas-images' en Supabase?: " + uploadError.message);
@@ -161,10 +163,11 @@ function RaffleForm() {
 
         if (giftFiles.length > 0) {
             for (const file of giftFiles) {
-                const fileExt = file.name.split('.').pop();
+                const uploadFile = await optimizeImageForUpload(file);
+                const fileExt = uploadFile.name.split('.').pop();
                 const fileName = `regalo_${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
                 const filePath = `premios/${fileName}`;
-                const { error: uploadError } = await supabase.storage.from('rifas-images').upload(filePath, file);
+                const { error: uploadError } = await supabase.storage.from('rifas-images').upload(filePath, uploadFile, { contentType: uploadFile.type });
 
                 if (uploadError) {
                     setError("Error al subir imagen de regalo: " + uploadError.message);
