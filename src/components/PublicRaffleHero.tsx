@@ -31,42 +31,50 @@ export function PublicRaffleHero({
   onSelectImage,
 }: PublicRaffleHeroProps) {
   const imageDialogRef = useRef<HTMLDialogElement>(null);
-  const imageCount = raffle.fotos?.length ?? 0;
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const isClosingRef = useRef(false);
+  const imageCount = raffle.fotos.length;
   const soldTickets = Math.max(0, raffle.total_boletos - availableTickets);
 
-  const openImageDialog = () => {
+  const openImageDialog = useCallback(() => {
     const dialog = imageDialogRef.current;
     if (!dialog || dialog.open) return;
     dialog.removeAttribute("data-closing");
     dialog.showModal();
-  };
+  }, []);
 
   const closeImageDialog = useCallback(() => {
     const dialog = imageDialogRef.current;
-    if (!dialog?.open || dialog.hasAttribute("data-closing")) return;
+    if (!dialog?.open || isClosingRef.current) return;
+    isClosingRef.current = true;
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       dialog.close();
+      isClosingRef.current = false;
+      triggerRef.current?.focus();
       return;
     }
 
     const finishClosing = () => {
-      if (!dialog.open) return;
+      isClosingRef.current = false;
       dialog.close();
+      triggerRef.current?.focus();
     };
+
     const onTransitionEnd = (event: TransitionEvent) => {
       if (event.target !== dialog || event.propertyName !== "opacity") return;
       window.clearTimeout(fallback);
       dialog.removeEventListener("transitionend", onTransitionEnd);
       finishClosing();
     };
+
     const fallback = window.setTimeout(() => {
       dialog.removeEventListener("transitionend", onTransitionEnd);
       finishClosing();
     }, 260);
 
-    dialog.addEventListener("transitionend", onTransitionEnd);
     dialog.setAttribute("data-closing", "");
+    dialog.addEventListener("transitionend", onTransitionEnd);
   }, []);
 
   return (
@@ -139,7 +147,7 @@ export function PublicRaffleHero({
           <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-white/70 bg-[#e9e3d7] p-2 shadow-[0_24px_48px_rgba(69,52,25,0.16)] sm:rounded-[2rem] sm:p-3">
             <div className="relative h-full overflow-hidden rounded-[1.25rem] bg-[#ddd3c2]">
               {imageCount > 0 ? (
-                <button type="button" onClick={openImageDialog} className="group block h-full w-full cursor-zoom-in text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white" aria-label={`Ampliar imagen ${currentImageIndex + 1} de ${raffle.nombre}`}>
+                <button ref={triggerRef} type="button" onClick={openImageDialog} className="group block h-full w-full cursor-zoom-in text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white" aria-label={`Ampliar imagen ${currentImageIndex + 1} de ${raffle.nombre}`}>
                   {/* The storage host is configurable per raffle, so a fixed Next Image remote pattern would break valid prize images. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

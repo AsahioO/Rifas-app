@@ -80,9 +80,15 @@ export default function SorteoPage() {
 
         return () => {
             clearDrawTimeouts();
+            if (confettiIntervalRef.current) {
+                clearInterval(confettiIntervalRef.current);
+                confettiIntervalRef.current = null;
+            }
             supabase.removeChannel(channel);
         };
     }, [clearDrawTimeouts]);
+
+    const confettiIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const fireConfetti = useCallback(async () => {
         const confetti = (await import("canvas-confetti")).default;
@@ -94,6 +100,7 @@ export default function SorteoPage() {
             const timeLeft = animationEnd - Date.now();
 
             if (timeLeft <= 0) {
+                confettiIntervalRef.current = null;
                 return clearInterval(interval);
             }
 
@@ -107,6 +114,7 @@ export default function SorteoPage() {
                 origin: { x: Math.random() * 0.3 + 0.7, y: Math.random() - 0.2 }
             });
         }, 250);
+        confettiIntervalRef.current = interval;
     }, []);
 
     type SliceDetails = { boleto: number; nombre: string };

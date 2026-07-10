@@ -134,6 +134,7 @@ export default function LandingPage() {
         if (attempt === 1) {
           setLiveEliminated([]);
           hasAutoScrolledLive.current = false;
+          confettiFired.current = false;
         }
         setLiveConsolationPrize(payload.premioConsolacion ? String(payload.premioConsolacion) : null);
         setLiveSlices(slices);

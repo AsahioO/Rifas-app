@@ -28,6 +28,25 @@
     /* Color de herencia para detalles sutiles, hover de acento */
 
     --radius: 0.75rem;
+
+    /* shadcn/ui palette — mapeada al sistema Lujo Accesible */
+    --card: 40 20% 97%;
+    --card-foreground: 30 15% 12%;
+    --popover: 40 20% 97%;
+    --popover-foreground: 30 15% 12%;
+    --primary: 30 15% 12%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 12% 88%;
+    --secondary-foreground: 30 15% 12%;
+    --muted: 40 10% 90%;
+    --muted-foreground: 40 6% 45%;
+    --accent: 40 30% 70%;
+    --accent-foreground: 30 15% 12%;
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 20% 85%;
+    --input: 40 12% 75%;
+    --ring: 40 30% 60%;
   }
 }
 
@@ -299,7 +318,7 @@
     font-weight: 650;
   }
 
-  .live-history[open] summary {
+  .live-history details[open] > summary {
     border-bottom: 1px solid rgba(224, 190, 112, 0.24);
   }
 

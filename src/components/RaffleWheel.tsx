@@ -182,8 +182,8 @@ export const RaffleWheel = memo(function RaffleWheel({
       <div
         className={cn(
           "absolute inset-[4.5%] overflow-hidden rounded-full border-[4px] border-[#18110b] bg-[#0b3329] shadow-[inset_0_0_0_4px_rgba(240,221,176,0.45),inset_0_0_30px_rgba(0,0,0,0.35)] sm:border-[6px]",
-          "transform-gpu will-change-transform motion-reduce:transition-none",
-          isResetting ? "duration-0" : "transition-transform duration-[5000ms] ease-[cubic-bezier(0.19,0.72,0.18,1)]",
+          "transform-gpu will-change-transform transition-transform motion-reduce:transition-none",
+          isResetting ? "duration-0" : "duration-[5000ms] ease-[cubic-bezier(0.19,0.72,0.18,1)]",
           isDrawing && "shadow-[inset_0_0_0_4px_rgba(240,221,176,0.45),inset_0_0_30px_rgba(0,0,0,0.35),0_0_0_6px_rgba(197,161,95,0.2)]"
         )}
         style={{ transform: `rotate(${rotation}deg)` }}
