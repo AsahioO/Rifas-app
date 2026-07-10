@@ -62,6 +62,18 @@
     text-size-adjust: 100%;
   }
 
+  html,
+  body,
+  * {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
   ::selection {
     background: rgba(200, 169, 110, 0.34);
     color: var(--brand-text);
@@ -117,27 +129,6 @@
 
   .text-balance {
     text-wrap: balance;
-  }
-
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: var(--brand-accent) transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: var(--brand-accent);
-    border: 3px solid transparent;
-    border-radius: 999px;
-    background-clip: content-box;
   }
 
   .custom-scrollbar {

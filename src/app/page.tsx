@@ -230,16 +230,16 @@ export default function LandingPage() {
   }, [activeRaffle?.fotos.length]);
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-brand-bg text-brand-text">
+    <div className="flex min-h-[100dvh] flex-col overflow-x-clip bg-brand-bg text-brand-text">
       <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[70] focus:rounded-lg focus:bg-brand-text focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white">Saltar al contenido</a>
-      <header className="safe-top sticky top-0 z-50 border-b border-[#e6ded0] bg-[#fffdf8]/90 backdrop-blur-xl">
+      <header className="safe-top sticky top-0 z-50 shrink-0 border-b border-[#e6ded0] bg-[#fffdf8]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2.5"><Trophy className="h-6 w-6 text-brand-accent" strokeWidth={1.8} /><span className="text-lg font-semibold tracking-[-0.055em] text-brand-text sm:text-xl">WHATSHOME<span className="text-brand-accent">RIFAS</span></span></div>
           <a href="/admin/login" className="rounded-md px-2 py-1 text-xs font-medium text-brand-muted/70 transition hover:text-brand-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent">Administración</a>
         </div>
       </header>
 
-      <main id="contenido" className="min-h-[calc(100dvh-4rem)] pb-20 md:pb-0">
+      <main id="contenido" className="flex min-h-0 flex-1 flex-col pb-20 md:pb-0">
         {loading ? (
           <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"><div className="h-20 animate-pulse rounded-[1.5rem] bg-[#eae3d7]" /><div className="mt-10 grid items-center gap-8 lg:grid-cols-2"><div className="space-y-4"><div className="h-4 w-28 animate-pulse rounded bg-[#eae3d7]" /><div className="h-20 max-w-xl animate-pulse rounded-[1.25rem] bg-[#e7dfd2]" /><div className="h-12 max-w-lg animate-pulse rounded bg-[#eae3d7]" /></div><div className="mx-auto aspect-[4/5] w-full max-w-md animate-pulse rounded-[2rem] bg-[#e7dfd2]" /></div></div>
         ) : activeRaffle ? (
@@ -259,11 +259,11 @@ export default function LandingPage() {
         ) : lastFinished?.ganador_nombre && lastFinished.ganador_nombre !== "Cancelada" ? (
           <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-7xl items-center px-4 py-12 sm:px-6 lg:px-8"><motion.article initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="grid w-full overflow-hidden rounded-[2rem] border border-[#e0d5c3] bg-[#fffdf8] shadow-[0_24px_60px_rgba(69,52,25,0.11)] lg:grid-cols-[0.9fr_1.1fr]"><div className="order-2 p-7 sm:p-12 lg:order-1 lg:p-16"><PartyPopper className="h-9 w-9 text-brand-accent" /><p className="mt-7 text-xs font-bold uppercase tracking-[0.22em] text-brand-accent">Rifa finalizada</p><h1 className="mt-3 text-balance font-serif text-5xl font-semibold tracking-[-0.065em] text-brand-text sm:text-6xl">Tenemos un ganador</h1><p className="mt-4 max-w-md text-base leading-7 text-brand-muted">{lastFinished.nombre} concluyó. El boleto ganador ya está confirmado.</p><div className="mt-8 inline-flex items-center gap-5 rounded-2xl border border-[#eadcb9] bg-[#fbf4e5] px-5 py-4"><span className="font-mono text-5xl font-semibold tracking-[-0.08em] text-[#8f7031]">{lastFinished.ganador_boleto}</span><span><span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#9b7c39]">Ganador</span><span className="mt-1 block max-w-[13rem] truncate text-lg font-semibold text-brand-text">{lastFinished.ganador_nombre}</span></span></div></div><div className="order-1 min-h-[19rem] bg-[#e9dfcc] lg:order-2 lg:min-h-full">{lastFinished.fotos?.[0] ? <img src={lastFinished.fotos[0]} alt={`Premio de ${lastFinished.nombre}`} className="h-full w-full object-cover" loading="eager" decoding="async" /> : <div className="flex h-full items-center justify-center text-brand-muted">Rifa finalizada</div>}</div></motion.article></section>
         ) : (
-          <section className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-7xl items-center px-4 py-12 sm:px-6 lg:px-8"><motion.div initial={reduceMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f4ead5] text-brand-accent"><Trophy className="h-7 w-7" /></div><p className="mt-8 text-xs font-bold uppercase tracking-[0.22em] text-brand-accent">Próxima rifa</p><h1 className="mt-3 text-balance font-serif text-5xl font-semibold tracking-[-0.065em] text-brand-text sm:text-6xl">Estamos preparando el próximo premio.</h1><p className="mt-5 max-w-lg text-base leading-7 text-brand-muted">Vuelve pronto para consultar los números de la siguiente rifa.</p></motion.div></section>
+          <section className="mx-auto flex w-full max-w-7xl flex-1 items-center px-4 py-12 sm:px-6 lg:px-8"><motion.div initial={reduceMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f4ead5] text-brand-accent"><Trophy className="h-7 w-7" /></div><p className="mt-8 text-xs font-bold uppercase tracking-[0.22em] text-brand-accent">Próxima rifa</p><h1 className="mt-3 text-balance font-serif text-5xl font-semibold tracking-[-0.065em] text-brand-text sm:text-6xl">Estamos preparando el próximo premio.</h1><p className="mt-5 max-w-lg text-base leading-7 text-brand-muted">Vuelve pronto para consultar los números de la siguiente rifa.</p></motion.div></section>
         )}
       </main>
 
-      <footer className="border-t border-[#e6ded0] bg-[#fffdf8] py-7"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 text-center text-sm text-brand-muted sm:flex-row sm:px-6 sm:text-left lg:px-8"><span className="font-semibold tracking-[-0.03em] text-brand-text">WHATSHOME RIFAS</span><span>Catálogo de rifas © {new Date().getFullYear()}</span></div></footer>
+      <footer className="shrink-0 border-t border-[#e6ded0] bg-[#fffdf8] py-7"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 text-center text-sm text-brand-muted sm:flex-row sm:px-6 sm:text-left lg:px-8"><span className="font-semibold tracking-[-0.03em] text-brand-text">WHATSHOME RIFAS</span><span>Catálogo de rifas © {new Date().getFullYear()}</span></div></footer>
     </div>
   );
 }
