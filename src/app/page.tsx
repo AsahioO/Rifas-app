@@ -35,6 +35,8 @@ export default function LandingPage() {
   const [liveTotalAttempts, setLiveTotalAttempts] = useState(1);
   const liveRef = useRef<HTMLDivElement>(null);
   const liveTimeouts = useRef<number[]>([]);
+  const liveAnimationFrames = useRef<number[]>([]);
+  const hasMountedLiveWheel = useRef(false);
   const hasAutoScrolledLive = useRef(false);
 
   const clearLiveTimeouts = useCallback(() => {
@@ -49,6 +51,24 @@ export default function LandingPage() {
     }, delay);
     liveTimeouts.current.push(timeout);
   }, []);
+
+  const clearLiveAnimationFrames = useCallback(() => {
+    liveAnimationFrames.current.forEach((frame) => window.cancelAnimationFrame(frame));
+    liveAnimationFrames.current = [];
+  }, []);
+
+  const scheduleInitialLiveRotation = useCallback((rotation: number) => {
+    clearLiveAnimationFrames();
+    const firstFrame = window.requestAnimationFrame(() => {
+      liveAnimationFrames.current = liveAnimationFrames.current.filter((frame) => frame !== firstFrame);
+      const secondFrame = window.requestAnimationFrame(() => {
+        liveAnimationFrames.current = liveAnimationFrames.current.filter((frame) => frame !== secondFrame);
+        setLiveRotation(rotation);
+      });
+      liveAnimationFrames.current.push(secondFrame);
+    });
+    liveAnimationFrames.current.push(firstFrame);
+  }, [clearLiveAnimationFrames]);
 
   useEffect(() => {
     setCurrentImageIndex(0);
@@ -118,6 +138,7 @@ export default function LandingPage() {
         if (slices.length === 0) return;
         const attempt = Number(payload.intento) || 1;
         const totalAttempts = Number(payload.totalIntentos) || attempt;
+        const rotation = Number(payload.rotation) || 0;
         setLiveActive(true);
         setLiveWinner(null);
         setLiveSpunCard(null);
@@ -132,7 +153,13 @@ export default function LandingPage() {
         }
         setLiveConsolationPrize(payload.premioConsolacion ? String(payload.premioConsolacion) : null);
         setLiveSlices(slices);
-        setLiveRotation(Number(payload.rotation) || 0);
+        if (!hasMountedLiveWheel.current) {
+          hasMountedLiveWheel.current = true;
+          setLiveRotation(0);
+          scheduleInitialLiveRotation(rotation);
+        } else {
+          setLiveRotation(rotation);
+        }
       }
 
       if (event === "eliminado") {
@@ -175,9 +202,10 @@ export default function LandingPage() {
       window.clearInterval(fallbackInterval);
       document.removeEventListener("visibilitychange", refreshOnFocus);
       clearLiveTimeouts();
+      clearLiveAnimationFrames();
       supabase.removeChannel(channel);
     };
-  }, [clearLiveTimeouts, fireConfetti, reduceMotion, scheduleLiveUpdate]);
+  }, [clearLiveAnimationFrames, clearLiveTimeouts, fireConfetti, reduceMotion, scheduleInitialLiveRotation, scheduleLiveUpdate]);
 
   const availableTickets = useMemo(() => {
     if (!activeRaffle) return 0;
