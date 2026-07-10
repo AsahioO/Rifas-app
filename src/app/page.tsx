@@ -202,7 +202,7 @@ export default function LandingPage() {
   }, [activeRaffle?.fotos.length]);
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-text">
+    <div className="min-h-screen overflow-x-clip bg-brand-bg text-brand-text">
       <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[70] focus:rounded-lg focus:bg-brand-text focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white">Saltar al contenido</a>
       <header className="safe-top sticky top-0 z-50 border-b border-[#e6ded0] bg-[#fffdf8]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
