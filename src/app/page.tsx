@@ -54,14 +54,6 @@ export default function LandingPage() {
     setCurrentImageIndex(0);
   }, [activeRaffle?.id]);
 
-  useEffect(() => {
-    if (!activeRaffle || activeRaffle.fotos.length <= 1) return;
-    const interval = window.setInterval(() => {
-      setCurrentImageIndex((current) => (current + 1) % activeRaffle.fotos.length);
-    }, 5000);
-    return () => window.clearInterval(interval);
-  }, [activeRaffle]);
-
   const fireConfetti = useCallback(async () => {
     const confetti = (await import("canvas-confetti")).default;
     const end = Date.now() + 3000;
